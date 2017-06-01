@@ -26,7 +26,7 @@
 
 #include "stimparameters.h"
 #include "globalconstants.h"
-
+class QLineEdit;
 class QDialogButtonBox;
 class QWidget;
 class QComboBox;
@@ -88,13 +88,18 @@ private:
     QGroupBox *trigger;
     QCheckBox *enableStim;
     QComboBox *triggerSource;
+    QComboBox *calibWindow;
     QLabel *triggerSourceLabel;
+    QLabel* calibWindowLabel;
+    QLabel* thrSpikeDetectorLabel;
     QComboBox *triggerEdgeOrLevel;
     QLabel *triggerEdgeOrLevelLabel;
     QComboBox *triggerHighOrLow;
     QLabel *triggerHighOrLowLabel;
     TimeSpinBox *postTriggerDelay;
     QLabel *postTriggerDelayLabel;
+
+    QLineEdit * thrSpikeDetectorLineEdit;
 
     QGroupBox *pulseTrain;
     QComboBox *pulseOrTrain;
@@ -123,7 +128,7 @@ private:
     QCheckBox *enableChargeRecovery;
 
     double timestep, currentstep;
-
+    double thrSpikeDetector;
 private slots:
     void enableWidgets();
     void calculateCharge();

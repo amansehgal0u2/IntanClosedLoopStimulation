@@ -39,6 +39,7 @@ StimParamDialog::StimParamDialog(StimParameters *parameter, QString nativeChanne
 {
     //set the parameter, timestep, and currentstep objects, so that they can be accessed by other functions in stimparamdialog.cpp
     parameters = parameter;
+    thrSpikeDetector = 4.0;// recommended threshold value
     timestep = timestep_us;
     currentstep = currentstep_uA;
     mainWindow = (MainWindow*) parent;
@@ -110,6 +111,20 @@ StimParamDialog::StimParamDialog(StimParameters *parameter, QString nativeChanne
                    << "KEYPRESS: 2" << "KEYPRESS: 3" << "KEYPRESS: 4" << "KEYPRESS: 5" << "KEYPRESS: 6"
                    << "KEYPRESS: 7" << "KEYPRESS: 8" << "CLOSED LOOP STIM";
     triggerSource->addItems(triggerSources);
+
+    calibWindowLabel = new QLabel(tr("Calibration Window Length for spike detector in (s)"));
+    calibWindow = new QComboBox();
+    QStringList calibWindowLenList;
+    calibWindowLenList <<"1"<<"2"<<"3"<<"4"<<"5"<<"6"<<"7"<<"8"<<"9"<<"10";
+    calibWindow->addItems(calibWindowLenList);
+    calibWindow->setEnabled(false);// enabled only when the closed loop stim option is selected from trigger source list
+    calibWindowLabel->setEnabled(false);
+
+    thrSpikeDetectorLabel = new QLabel(tr("Threshold value for spike detector"));
+    thrSpikeDetectorLineEdit = new QLineEdit(QString::number(thrSpikeDetector, 'f', 0));
+    thrSpikeDetectorLineEdit->setValidator(new QDoubleValidator(0.0001, 9999.9999, 4, this));
+    thrSpikeDetectorLabel->setEnabled(false);
+    thrSpikeDetectorLineEdit->setEnabled(false);
 
     //triggerEdgeOrLevelLabel = new QLabel(tr("Stimulation is: "));
     triggerEdgeOrLevelLabel = new QLabel(tr(" "));
@@ -363,6 +378,16 @@ StimParamDialog::StimParamDialog(StimParameters *parameter, QString nativeChanne
     triggerSourceRow->addStretch();
     triggerSourceRow->addWidget(triggerSource);
 
+    QHBoxLayout *calibWindowRow = new QHBoxLayout;
+    calibWindowRow->addWidget(calibWindowLabel);
+    calibWindowRow->addStretch();
+    calibWindowRow->addWidget(calibWindow);
+
+    QHBoxLayout *thrSpikeDetectorRow = new QHBoxLayout;
+    thrSpikeDetectorRow->addWidget(thrSpikeDetectorLabel);
+    thrSpikeDetectorRow->addStretch();
+    thrSpikeDetectorRow->addWidget(thrSpikeDetectorLineEdit);
+
     QHBoxLayout *triggerEdgeOrLevelRow = new QHBoxLayout;
     triggerEdgeOrLevelRow->addWidget(triggerEdgeOrLevelLabel);
     triggerEdgeOrLevelRow->addStretch();
@@ -382,6 +407,10 @@ StimParamDialog::StimParamDialog(StimParameters *parameter, QString nativeChanne
     triggerLayout->addLayout(enableStimRow);
     triggerLayout->addStretch();
     triggerLayout->addLayout(triggerSourceRow);
+    triggerLayout->addStretch();
+    triggerLayout->addLayout(calibWindowRow);
+    triggerLayout->addStretch();
+    triggerLayout->addLayout(thrSpikeDetectorRow);
     triggerLayout->addStretch();
     triggerLayout->addLayout(triggerEdgeOrLevelRow);
     triggerLayout->addStretch();
@@ -699,6 +728,22 @@ void StimParamDialog::enableWidgets()
     triggerHighOrLow->setEnabled(enableStim->isChecked());
     postTriggerDelayLabel->setEnabled(enableStim->isChecked());
     postTriggerDelay->setEnabled(enableStim->isChecked());
+    // only disable but not enable
+    if(!enableStim->isChecked())
+    {
+        calibWindow->setEnabled(enableStim->isChecked());
+        calibWindowLabel->setEnabled(enableStim->isChecked());
+        thrSpikeDetectorLabel->setEnabled(enableStim->isChecked());
+        thrSpikeDetectorLineEdit->setEnabled(enableStim->isChecked());
+    }
+    // stim is enabled but the selected option is also closed loop.
+    else if(enableStim->isChecked() && triggerSource->currentIndex() == StimParameters::ClosedLoop)
+    {
+        calibWindow->setEnabled(enableStim->isChecked());
+        calibWindowLabel->setEnabled(enableStim->isChecked());
+        thrSpikeDetectorLabel->setEnabled(enableStim->isChecked());
+        thrSpikeDetectorLineEdit->setEnabled(enableStim->isChecked());
+    }
 
     /* Pulse Train Group Box */
     pulseOrTrainLabel->setEnabled(enableStim->isChecked());
@@ -769,6 +814,22 @@ void StimParamDialog::closeLoopStimIdxSelected(int idx)
                                       tr("The spike band filter"
                                          " is disabled. Enable the spike band filter"
                                          " in order to use this option."),QMessageBox::Ok);
+    }
+    else if((mainWindow)->getSignalProcessorObj()->getSpikeBandFitlerStatus() && idx == StimParameters::ClosedLoop)
+    {
+        //enable calibration window for the spike detector
+        calibWindow->setEnabled(true);
+        calibWindowLabel->setEnabled(true);
+        // enable the threshold text box.
+        thrSpikeDetectorLabel->setEnabled(true);
+        thrSpikeDetectorLineEdit->setEnabled(true);
+    }
+    else
+    {
+        calibWindow->setEnabled(false);
+        calibWindowLabel->setEnabled(false);
+        thrSpikeDetectorLabel->setEnabled(false);
+        thrSpikeDetectorLineEdit->setEnabled(false);
     }
 }
 

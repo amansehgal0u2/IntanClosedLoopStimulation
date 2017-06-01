@@ -1121,6 +1121,7 @@ void MainWindow::createLayout()
     tabWidget1->addTab(frameTab3, tr("Analog Out/Audio"));
     tabWidget1->addTab(frameTab4, tr("Configure"));
     tabWidget1->addTab(frameTab5, tr("Display"));
+    tabWidget1->setStyleSheet("QTabBar::tab { background-color: #ACB6B6; }");
 
     dspCutoffFreqLabel = new QLabel("0.00 Hz");
     lowerBandwidthLabel = new QLabel("0.00 Hz");
@@ -1154,6 +1155,8 @@ void MainWindow::createLayout()
     highpassFilterLineEdit->setValidator(new QDoubleValidator(0.01, 9999.99, 2, this));
     connect(highpassFilterLineEdit, SIGNAL(textChanged(const QString &)),
             this, SLOT(highpassFilterLineEditChanged()));
+
+
 
     QHBoxLayout *highpassFilterLayout = new QHBoxLayout;
     highpassFilterLayout->addWidget(highpassFilterCheckBox);
