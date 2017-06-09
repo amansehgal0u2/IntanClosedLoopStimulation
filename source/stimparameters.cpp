@@ -53,6 +53,9 @@ StimParameters::StimParameters()
     postStimChargeRecovOn = 0;
     postStimChargeRecovOff = 0;
     enableChargeRecovery = false;
+
+    spikeDetectionThr=4.0;
+    spikeDetectCalibWindow=1;
 }
 
 void StimParameters::copyStimParameters(StimParameters *source)
@@ -84,6 +87,9 @@ void StimParameters::copyStimParameters(StimParameters *source)
     postStimChargeRecovOn = source->postStimChargeRecovOn;
     postStimChargeRecovOff = source->postStimChargeRecovOff;
     enableChargeRecovery = source->enableChargeRecovery;
+
+    spikeDetectionThr = source->spikeDetectionThr;
+    spikeDetectCalibWindow = source->spikeDetectCalibWindow;
 }
 
 void StimParameters::pasteStimParameters(StimParameters *destination)
@@ -115,12 +121,18 @@ void StimParameters::pasteStimParameters(StimParameters *destination)
     destination->postStimChargeRecovOn = postStimChargeRecovOn;
     destination->postStimChargeRecovOff = postStimChargeRecovOff;
     destination->enableChargeRecovery = enableChargeRecovery;
+
+    destination->spikeDetectionThr = spikeDetectionThr;
+    destination->spikeDetectCalibWindow = spikeDetectCalibWindow;
 }
 
 void StimParameters::writeXml(QXmlStreamWriter &xml, SignalType signalType)
 {
     // No stimulation parameters are associated with Analog In or Digital In channels.
-    if (signalType == BoardAdcSignal || signalType == BoardDigInSignal) return;
+    if (signalType == BoardAdcSignal || signalType == BoardDigInSignal)
+    {
+        return;
+    }
 
     xml.writeTextElement("enabled", QString::number((int)enabled));
     xml.writeTextElement("triggerSource", QString::number((int)triggerSource));
@@ -132,6 +144,12 @@ void StimParameters::writeXml(QXmlStreamWriter &xml, SignalType signalType)
     xml.writeTextElement("pulseTrainPeriod", QString::number(pulseTrainPeriod));
     xml.writeTextElement("refractoryPeriod", QString::number(refractoryPeriod));
 
+    // closed loop stimulation based on spike detection
+    if (triggerSource==ClosedLoop)
+    {
+        xml.writeTextElement("spikeDetectCalibWindow",QString::number(spikeDetectCalibWindow));
+        xml.writeTextElement("spikeDetectionThr",QString::number(spikeDetectionThr));
+    }
     if (signalType == AmplifierSignal || signalType == BoardDacSignal) {
         xml.writeTextElement("stimShape", QString::number((int)stimShape));
         xml.writeTextElement("stimPolarity", QString::number((int)stimPolarity));

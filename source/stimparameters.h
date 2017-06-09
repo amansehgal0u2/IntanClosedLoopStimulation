@@ -93,10 +93,12 @@ public:
     double postStimAmpSettle;
     bool maintainAmpSettle;
     bool enableAmpSettle;
-
     double postStimChargeRecovOn;
     double postStimChargeRecovOff;
     bool enableChargeRecovery;
+
+    double spikeDetectionThr;
+    int spikeDetectCalibWindow;
 };
 
 #endif // STIMPARAMETERS_H

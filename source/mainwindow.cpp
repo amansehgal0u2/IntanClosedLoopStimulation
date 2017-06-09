@@ -1121,7 +1121,7 @@ void MainWindow::createLayout()
     tabWidget1->addTab(frameTab3, tr("Analog Out/Audio"));
     tabWidget1->addTab(frameTab4, tr("Configure"));
     tabWidget1->addTab(frameTab5, tr("Display"));
-    tabWidget1->setStyleSheet("QTabBar::tab { background-color: #ACB6B6; }");
+    tabWidget1->setStyleSheet("QTabBar::tab:selected {color: #000000;}");
 
     dspCutoffFreqLabel = new QLabel("0.00 Hz");
     lowerBandwidthLabel = new QLabel("0.00 Hz");

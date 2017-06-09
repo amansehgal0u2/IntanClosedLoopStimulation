@@ -88,7 +88,6 @@ private:
     QGroupBox *trigger;
     QCheckBox *enableStim;
     QComboBox *triggerSource;
-    QComboBox *calibWindow;
     QLabel *triggerSourceLabel;
     QLabel* calibWindowLabel;
     QLabel* thrSpikeDetectorLabel;
@@ -99,7 +98,6 @@ private:
     TimeSpinBox *postTriggerDelay;
     QLabel *postTriggerDelayLabel;
 
-    QLineEdit * thrSpikeDetectorLineEdit;
 
     QGroupBox *pulseTrain;
     QComboBox *pulseOrTrain;
@@ -127,9 +125,15 @@ private:
     QLabel *postStimChargeRecovOffLabel;
     QCheckBox *enableChargeRecovery;
 
+    QComboBox *calibWindow;
+    QLineEdit * thrSpikeDetectorLineEdit;
     double timestep, currentstep;
+
     double thrSpikeDetector;
+    uint32_t spikeDetectorCalibWin;
 private slots:
+    void setSpikeDetectorCalibWin(int);
+    void setThrSpikeDetector();
     void enableWidgets();
     void calculateCharge();
     void calculatePulseTrainFrequency();
