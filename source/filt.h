@@ -28,20 +28,23 @@
 #include <math.h>
 #include <stdlib.h>
 #include <unistd.h>
-
+#include <QVector>
 
 class FIRFilter{
 	private:
 		int m_num_taps;
 		double *m_taps;
-		double *m_sr;
         unsigned int spikeBandFilterSamplingFreqIdx;
         double *spikeBandFIRCoeffs[3];
+        unsigned int num_streams;
+        unsigned int channels_per_stream;
+        QVector<QVector<QVector<double>>> m_sr;
 	public:
         void setSpikeBandFilterSamplingFreq(unsigned int sr);
+        void initFilterVectors(unsigned int x , unsigned int y);
         FIRFilter();
         ~FIRFilter( );
-        double filter(double x);
+        double filter(double x, unsigned int stream, unsigned int channel);
 };
 
 #endif

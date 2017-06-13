@@ -61,6 +61,8 @@ public:
     int saveBufferedData(queue<Rhs2000DataBlock> &bufferQueue, QDataStream &out, SaveFormat format, bool saveTtlOut, bool saveDcAmps, int timestampOffset);
     void createSaveList(SignalSources *signalSources, bool addTriggerChannel, int triggerChannel, double stimStepSize);
     void createTimestampFilename(QString path);
+    void calibrateSpikeDetector();
+    void runSpikeDetector();
     void openTimestampFile();
     void closeTimestampFile();
     void createSignalTypeFilenames(QString path);
@@ -78,6 +80,7 @@ public:
 
     // QVector<QVector<QVector<double> > > amplifierPreFilter;
     double* amplifierPreFilterFast;
+    bool spikeDetectorCalibrated;
     QVector<QVector<QVector<double> > > amplifierPostFilter;
     QVector<QVector<QVector<double> > > dcAmplifier;
     QVector<QVector<QVector<int> > > complianceLimit;

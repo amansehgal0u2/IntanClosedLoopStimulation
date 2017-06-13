@@ -741,6 +741,10 @@ void StimParamDialog::enableWidgets()
         calibWindowLabel->setEnabled(enableStim->isChecked());
         thrSpikeDetectorLabel->setEnabled(enableStim->isChecked());
         thrSpikeDetectorLineEdit->setEnabled(enableStim->isChecked());
+        if(mainWindow->ClosedLoopStimEnabled > 0)
+        {
+            mainWindow->ClosedLoopStimEnabled--;
+        }
     }
     // stim is enabled but the selected option is also closed loop.
     else if(enableStim->isChecked() && triggerSource->currentIndex() == StimParameters::ClosedLoop)
@@ -749,6 +753,7 @@ void StimParamDialog::enableWidgets()
         calibWindowLabel->setEnabled(enableStim->isChecked());
         thrSpikeDetectorLabel->setEnabled(enableStim->isChecked());
         thrSpikeDetectorLineEdit->setEnabled(enableStim->isChecked());
+        mainWindow->ClosedLoopStimEnabled++;
     }
 
     /* Pulse Train Group Box */
@@ -828,7 +833,8 @@ void StimParamDialog::closeLoopStimIdxSelected(int idx)
         calibWindowLabel->setEnabled(true);
         // enable the threshold text box.
         thrSpikeDetectorLabel->setEnabled(true);
-        thrSpikeDetectorLineEdit->setEnabled(true);
+        thrSpikeDetectorLineEdit->setEnabled(true);        
+        mainWindow->ClosedLoopStimEnabled++;
     }
     else
     {
@@ -836,6 +842,13 @@ void StimParamDialog::closeLoopStimIdxSelected(int idx)
         calibWindowLabel->setEnabled(false);
         thrSpikeDetectorLabel->setEnabled(false);
         thrSpikeDetectorLineEdit->setEnabled(false);
+        // the trigger source parameter is currently set to closed loop and has been changed in the GUI to be
+        // something other than closed loop. Since the closed loop stim trigger source has been unselected,
+        // decrement the closedloop stim counter.
+        if(mainWindow->ClosedLoopStimEnabled > 0 && parameters->triggerSource == StimParameters::ClosedLoop)
+        {
+            mainWindow->ClosedLoopStimEnabled--;
+        }
     }
 }
 

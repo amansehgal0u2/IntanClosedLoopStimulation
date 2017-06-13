@@ -110,6 +110,7 @@ public:
     bool showV0Axis();
     void setManualStimTrigger(int trigger, bool triggerOn);
     SignalProcessor* getSignalProcessorObj() const;
+    unsigned int ClosedLoopStimEnabled;
 
 protected:
     void closeEvent(QCloseEvent *event);

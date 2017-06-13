@@ -69,6 +69,7 @@ SignalProcessor::SignalProcessor()
     // Set up random number generator in case we are asked to generate synthetic data.
     random = new RandomNumber();
     spikeBandFIRfilter = new FIRFilter();
+    spikeDetectorCalibrated = false;
     random->setGaussianAccuracy(6);
 
     // Other synthetic waveform variables.
@@ -142,6 +143,9 @@ void SignalProcessor::allocateMemory(int numStreams)
             }
         }
     }
+
+    // initialize spikeband filter vectors for all channels
+    spikeBandFIRfilter->initFilterVectors(numStreams, CHANNELS_PER_STREAM);
 }
 
 // Allocates memory for a 3-D array of doubles.
@@ -2106,8 +2110,8 @@ void SignalProcessor::filterData(int numBlocks,
                 {
                     for (t = 0; t < length; ++t)
                     {
-                        // filer data with band pass filter
-                         amplifierPostFilter[stream][channel][t] = spikeBandFIRfilter->filter(amplifierPostFilter[stream][channel][t]);
+                        // filter data with band pass filter
+                         amplifierPostFilter[stream][channel][t] = spikeBandFIRfilter->filter(amplifierPostFilter[stream][channel][t], stream,channel);
                     }
                 }
             }
@@ -2167,3 +2171,13 @@ void SignalProcessor::amplitudeOfFreqComponent(double &realComponent, double &im
     imagComponent = 2.0 * meanQ;
 }
 
+void SignalProcessor::calibrateSpikeDetector()
+{
+    // change the calibration state to true
+    spikeDetectorCalibrated = true;
+}
+
+void SignalProcessor::runSpikeDetector()
+{
+
+}

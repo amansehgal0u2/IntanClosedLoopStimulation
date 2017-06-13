@@ -1051,6 +1051,9 @@ void WavePlot::drawAxisText(QPainter &painter, int frameNumber)
         case StimParameters::KeyPress8:
             triggerName = "KEY 8";
             break;
+        case StimParameters::ClosedLoop:
+            triggerName = "CL SD"; // closed loop stim with spike detect feedback
+            break;
         default:
             triggerName = "n/a";
             break;

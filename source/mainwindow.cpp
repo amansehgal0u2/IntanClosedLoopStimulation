@@ -175,12 +175,18 @@ MainWindow::MainWindow(int sampleRateIndex_, int stimStepIndex)
         channelVisible[i].fill(false);
     }
 
-    signalProcessor = new SignalProcessor(); // contains all the filters
+    // contains all the filters and synthetic wave form generators
+    signalProcessor = new SignalProcessor();
     notchFilterFrequency = 60.0;
     notchFilterBandwidth = 10.0;
     notchFilterEnabled = false;
     spikeBandFilterEnabled = false;
 
+    // by default this feature is not set. The purpose of this counter is
+    // to track the number of channels on which closed loop spike detection
+    // is running. If there are no channels with this stim feature enabled,
+    // then the tool will not run spike detection
+    ClosedLoopStimEnabled = 0;
     signalProcessor->setNotchFilterEnabled(notchFilterEnabled);
     signalProcessor->setSpikeBandFitlerEnabled(spikeBandFilterEnabled);
 
@@ -2069,7 +2075,8 @@ void MainWindow::changeSampleRate(int sampleRateIndex, bool updateStimParams)
 
     signalProcessor->setNotchFilter(notchFilterFrequency, notchFilterBandwidth, boardSampleRate);
     signalProcessor->setHighpassFilter(highpassFilterFrequency, boardSampleRate);
-    signalProcessor->setSpikeBandFitlerSamplingRate(sampleRateIndex);// this function takes in the index corresponding to the sampling rate
+    // this function takes in the index corresponding to the sampling rate selected from the QComboBox
+    signalProcessor->setSpikeBandFitlerSamplingRate(sampleRateIndex);
 
     if (!synthMode) {
         evalBoard->setDacHighpassFilter(highpassFilterFrequency);
@@ -3035,9 +3042,27 @@ void MainWindow::runInterfaceBoard()
                 }
             }
 
-            // Apply notch filter to amplifier data.
+            // Apply filters to amplifier data.
             signalProcessor->filterData(numUsbBlocksToRead, channelVisible);
-
+            // check if closed loop stim has been enabled
+            // this variable is incremented every time a channel has
+            // closed loop stimulation enabled
+            if(ClosedLoopStimEnabled > 0)
+            {
+                // the spike detector hasn't been calibrated yet
+                if(!signalProcessor->spikeDetectorCalibrated)
+                {
+                    signalProcessor->calibrateSpikeDetector();
+                }
+                // run spike detector once calibration is done
+                signalProcessor->runSpikeDetector();
+            }
+            // close loop stim is disabled so re-calibrate the spike detector
+            // when it gets re-enabled
+            else
+            {
+                signalProcessor->spikeDetectorCalibrated = false;
+            }
             // Trigger WavePlot widget to display new waveform data.
             wavePlot->passFilteredData();
 
@@ -3094,7 +3119,9 @@ void MainWindow::runInterfaceBoard()
                                              "board reached maximum capacity.  This happens when the host computer "
                                              "cannot keep up with the data streaming from the interface board."
                                              "<p>Try lowering the sample rate, disabling the notch filter, or reducing "
-                                             "the number of waveforms on the screen to reduce CPU load."));
+                                             "the number of waveforms on the screen to reduce CPU load. If youre using "
+                                             "closed loop stimulation, Reduce the number of channels used for closed loop"
+                                             "stimulation."));
                 }
             } else if (hasBeenUpdated) {
                 fifoNearlyFull = 0;
@@ -4997,9 +5024,13 @@ void MainWindow::loadStimSettings()
                         while (!doneWithChannel) {
                             if (xml.readNextStartElement()) {
                                 if (xml.name() == "enabled") {
-                                    channel->stimParameters->enabled = (bool)xml.readElementText().toInt();
+                                    channel->stimParameters->enabled = (bool)xml.readElementText().toInt();                                    
                                 } else if (xml.name() == "triggerSource") {
                                     channel->stimParameters->triggerSource = (StimParameters::TriggerSources)xml.readElementText().toInt();
+                                    if (channel->stimParameters->enabled && channel->stimParameters->triggerSource == StimParameters::ClosedLoop)
+                                    {
+                                        this->ClosedLoopStimEnabled++;
+                                    }
                                 } else if (xml.name() == "triggerEdgeOrLevel") {
                                     channel->stimParameters->triggerEdgeOrLevel = (StimParameters::TriggerEdgeOrLevels)xml.readElementText().toInt();
                                 } else if (xml.name() == "triggerHighOrLow") {
@@ -5044,6 +5075,10 @@ void MainWindow::loadStimSettings()
                                     channel->stimParameters->postStimChargeRecovOff = xml.readElementText().toDouble();
                                 } else if (xml.name() == "enableChargeRecovery") {
                                     channel->stimParameters->enableChargeRecovery = (bool)xml.readElementText().toInt();
+                                } else if (xml.name() == "spikeDetectCalibWindow"){
+                                    channel->stimParameters->spikeDetectCalibWindow = xml.readElementText().toInt();
+                                } else if (xml.name() == "spikeDetectionThr"){
+                                    channel->stimParameters->spikeDetectionThr = xml.readElementText().toDouble();
                                 } else {
                                     cout << "Error: unrecognized XML name: " << xml.name().toString().toStdString() << endl;
                                 }
