@@ -3072,7 +3072,7 @@ void MainWindow::runInterfaceBoard()
                 {
                     // run spike detector once calibration is done
                     this->updateStatusBarText("Running Spike Detector with Closed Loop Stim.");
-                    signalProcessor->runSpikeDetector(const QVector<QVector<bool> > &channelVisible);
+                    signalProcessor->runSpikeDetector();
                 }
             }
             // close loop stim is disabled so re-calibrate the spike detector

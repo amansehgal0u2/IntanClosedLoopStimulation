@@ -17,9 +17,8 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
  * USAGE:
- * while(data_to_be_filtered){
  * 	x = // Get next sample
- * 	y = filter->do_sample( x );
+ * 	y = <filter_object>->filter( x, stream, channel );
  */
 
 #include "filt.h"
@@ -42,8 +41,6 @@ FIRFilter::FIRFilter()
 
 void FIRFilter::initFilterVectors(unsigned int num_streams , unsigned int channels_per_stream)
 {
-    this->num_streams = num_streams;
-    this->channels_per_stream = channels_per_stream;
     int i, j;
     if (num_streams == 0)
     {
@@ -87,18 +84,18 @@ void FIRFilter::setSpikeBandFilterSamplingFreq(unsigned int sr)
 // apply the filter to the given stream and channel
 double FIRFilter::filter(double x, unsigned int stream, unsigned int channel)
 {
-    double y =0.0;
+    double y = 0.0;
     // propagate the samples through the window
     for(int i = m_num_taps - 1; i >= 1; i--)
     {
-        m_sr[stream][channel][i] = m_sr[stream][channel][i-1];
+        m_sr[stream][channel][i] = m_sr.at(stream).at(channel).at(i-1);
     }
     // assign new data sample
     m_sr[stream][channel][0] = x;
     // run the filter using the FIR coeffs
     for(int i = 0; i < m_num_taps; i++)
     {
-        y += m_sr[stream][channel][i] * m_taps[i];
+        y += m_sr.at(stream).at(channel).at(i) * m_taps[i];
     }
     return y;
 }

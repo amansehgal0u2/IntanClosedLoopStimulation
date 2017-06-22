@@ -60,7 +60,8 @@ HEADERS       = \
     chargerecoverydialog.h \
     filt.h \
     helpdialogspikebandfilter.h \
-    spikebandfiltercoeffs.h
+    spikebandfiltercoeffs.h \
+    errorcodes.h
 
 SOURCES       = main.cpp \
     okFrontPanelDLL.cpp \

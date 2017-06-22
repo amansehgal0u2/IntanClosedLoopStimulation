@@ -21,9 +21,12 @@
 
 #include <QVector>
 #include <QFile>
+#include <QList>
 #include <QDataStream>
 #include <queue>
 #include <qmath.h>
+#include <QMessageBox>
+#include <QtAlgorithms>
 #include <iostream>
 #include <QElapsedTimer>
 #include "mainwindow.h"
@@ -36,7 +39,7 @@
 #include "rhs2000datablock.h"
 #include "stimparameters.h"
 #include "filt.h"
-
+#include "errorcodes.h"
 using namespace std;
 
 // This class stores and processes short segments of waveform data
@@ -2171,13 +2174,169 @@ void SignalProcessor::amplitudeOfFreqComponent(double &realComponent, double &im
     imagComponent = 2.0 * meanQ;
 }
 
-void SignalProcessor::calibrateSpikeDetector()
+// insert a new channel to perform spike detection with
+// building this list will speed up code and prevent running nested loops on the channel each time
+void SignalProcessor::addSpikeDetectionChannel(unsigned int boardStream, unsigned int chipChannel)
 {
-    // change the calibration state to true
-    spikeDetectorCalibrated = true;
+    channel_id_t temp = {.stream_id = boardStream, .chip_channel_id = chipChannel};
+    this->spikeDetection_channelIdList.append(temp);
 }
 
-void SignalProcessor::runSpikeDetector()
+// remove the channel from this list if the spike detection is disabled on this channel
+void SignalProcessor::remSpikeDetectionChannel(unsigned int boardStream, unsigned int chipChannel)
 {
+    if (!spikeDetection_channelIdList.isEmpty())
+    {
+        for (int i = 0; i<this->spikeDetection_channelIdList.size(); i++)
+        {
+            if(spikeDetection_channelIdList.at(i).chip_channel_id == chipChannel &&
+               spikeDetection_channelIdList.at(i).stream_id == boardStream)
+            {
+                spikeDetection_channelIdList.removeAt(i);
+                break;
+            }
+        }
+    }
+}
 
+int SignalProcessor::calibrateSpikeDetector(SignalSources *signalSources, double boardSampleRate, unsigned int numBlocks)
+{
+    // num of samples to process this iteration for each channel
+    // corresponds to the number of samples in the usb buffer
+    unsigned int length = SAMPLES_PER_DATA_BLOCK * numBlocks;
+    unsigned int numChannels = this->spikeDetection_channelIdList.size();
+    // this buffer tracks the number of calibration samples per channel to estimate the noise floor
+    static unsigned int* numSamples_channel = nullptr;
+    // used to keep track of when all channels are done
+    static unsigned int notDone;
+    // this buffer tracks whether the calibration process for a specific channel is over
+    static bool* channel_calibDone = nullptr;
+    // this buffer tracks where the incoming sample needs to be copied over
+    static QVector<unsigned int> sampleIdx_channel;
+    // if the heap list is empty, then allocate arrays for the channels to store samples that will
+    // be used to perform noise floor calibration
+    if(spikeDetectorCalib_heapList.isEmpty())
+    {
+        notDone = numChannels; // update in case the number of channles to run the detector on have changed
+        // when re-calibrating erase the list
+        if (!spikeDetection_NoiseEstMedian.isEmpty())
+        {
+            spikeDetection_NoiseEstMedian.clear();
+        }
+        if(numSamples_channel == nullptr)
+        {
+            numSamples_channel = new unsigned int[numChannels];;
+        }
+        if(channel_calibDone == nullptr)
+        {
+            channel_calibDone = new bool [numChannels];
+        }
+        if(sampleIdx_channel.isEmpty())
+        {
+            sampleIdx_channel.resize(numChannels);
+            sampleIdx_channel.fill(0);
+        }
+        // create heaps for estimation of noise on each channel
+        for (unsigned int i = 0; i < numChannels; i++)
+        {
+            channel_id_t channel =  spikeDetection_channelIdList.at(i);
+
+            // obtain the current channel's object
+            SignalChannel *channelObj =signalSources->findAmplifierChannel(channel.stream_id, channel.chip_channel_id);
+
+            // num of samples to be used for noise floor calibration
+            unsigned int numSamples = (unsigned int) (boardSampleRate * channelObj->stimParameters->spikeDetectCalibWindow);
+            double* temp = new double[numSamples];
+            // null pointer was returned
+            if (temp == nullptr)
+            {
+               return EXIT_NULLPTR_EXCEPTION;
+            }
+            spikeDetectorCalib_heapList.append(temp);
+            numSamples_channel[i]= numSamples;
+            channel_calibDone[i] = false;
+         }
+    }
+    // ---------begin calibration---------
+    // for every channel that has spike detection, copy over the post
+    // filtered data and begin noise floor estimation
+    for (unsigned int i = 0; i < numChannels; i++)
+    {
+        if (channel_calibDone[i] == false)
+        {
+            // calibration isn't done so shift samples into the buffer for this channel
+            channel_id_t channel = spikeDetection_channelIdList.at(i);
+            if(sampleIdx_channel.at(i)+length <= numSamples_channel[i] )
+            {
+                for (unsigned int t = 0; t < length; ++t)
+                {
+                    // copy over the entire block that was read from the usb bus for this channel
+                    spikeDetectorCalib_heapList[i][sampleIdx_channel.at(i)+t] = (double)qFabs(amplifierPostFilter.at(channel.stream_id).at(channel.chip_channel_id).at(t))/NOISE_FLOOR_CALIBRATION_CONSTANT;
+                }
+                sampleIdx_channel[i]+=length;
+            }
+            // there is room for a few more samples for this channel
+            else if (numSamples_channel[i] - sampleIdx_channel.at(i) >= 1)
+            {
+                unsigned int t = 0;
+                while (sampleIdx_channel.at(i) < numSamples_channel[i])
+                {
+                    spikeDetectorCalib_heapList[i][sampleIdx_channel.at(i)] = (double)qFabs(amplifierPostFilter.at(channel.stream_id).at(channel.chip_channel_id).at(t))/NOISE_FLOOR_CALIBRATION_CONSTANT;
+                    sampleIdx_channel[i]++; t++;
+                }
+            }
+            // all samples for this channel have been accumulated. Calibration is now complete.
+            else
+            {
+                channel_calibDone[i] = true;
+                notDone--;
+            }
+        }
+    }
+    // noise floor estimation is now done.
+    // compute the median and multiply it by the threshold
+    // ONLY after a noise estimate for all channels has been acquired
+    if(!notDone)
+    {
+        for (unsigned int i = 0; i < numChannels; i++)
+        {
+            // sort array elements
+            qSort(spikeDetectorCalib_heapList[i], spikeDetectorCalib_heapList[i]+numSamples_channel[i]);
+
+            double median = numSamples_channel[i] % 2 ? // check if the number of elements is even: returns 1 if odd
+                            spikeDetectorCalib_heapList[i][numSamples_channel[i] / 2] : // odd number of elements
+                            (spikeDetectorCalib_heapList[i][numSamples_channel[i] / 2 - 1] + spikeDetectorCalib_heapList[i][numSamples_channel[i] / 2]) / 2; // even number of elements
+
+            spikeDetection_NoiseEstMedian.append(median); // add the median to the list for real-time stim signals
+        }
+        // calibration done. Prevents the runBoardInterface() loop from re-doing the calibration routine
+        spikeDetectorCalibrated = true;
+        //-----RESET ALL THE STATE VARIABLES FOR THE spike detector-----
+        // clear out all the buffers that were allocated for the channels
+        delete [] channel_calibDone;
+        delete [] numSamples_channel;
+        channel_calibDone = nullptr;
+        numSamples_channel = nullptr;
+        // delete the heaps pointed to by the list
+        qDeleteAll(spikeDetectorCalib_heapList.begin(), spikeDetectorCalib_heapList.end());
+        // clear the list pointers
+        spikeDetectorCalib_heapList.clear();
+        // clear the sample index pointers
+        sampleIdx_channel.clear();
+    }
+    return EXIT_SUCCESS;
+}
+
+void SignalProcessor::runSpikeDetector(const QVector<QVector<bool> > &channelVisible)
+{
+    // detect spikes on all the channels
+    for (unsigned int i = 0; i < spikeDetection_channelIdList.size(); i++)
+    {
+        channel_id_t channel = spikeDetection_channelIdList[i];
+        // run spike detector only if channel is enabled
+        if(channelVisible.at(channel.stream_id).at(channel.chip_channel_id))
+        {
+
+        }
+    }
 }

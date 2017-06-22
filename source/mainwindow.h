@@ -222,6 +222,7 @@ private:
     void empiricalResistanceCorrection(double &impedanceMagnitude, double &impedancePhase,
                                        double boardSampleRate);
 
+    void updateStatusBarText(const QString& s);
     void setStatusBarReady();
     void setStatusBarRunning();
     void setStatusBarRecording(double bytesPerMinute, double totalElapsedRecordTimeSeconds);

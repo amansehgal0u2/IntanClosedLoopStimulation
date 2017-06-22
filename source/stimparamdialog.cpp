@@ -26,6 +26,7 @@
 
 /* Stim Param Dialog is a dialog box that allows the user to view and change a channel's stimulation parameters */
 
+#include "signalchannel.h"
 #include "stimparamdialog.h"
 #include "timespinbox.h"
 #include "currentspinbox.h"
@@ -34,7 +35,7 @@
 #include "signalprocessor.h"
 #include <cmath>
 
-StimParamDialog::StimParamDialog(StimParameters *parameter, QString nativeChannelName, QString customChannelName, double timestep_us, double currentstep_uA, QWidget *parent)
+StimParamDialog::StimParamDialog(StimParameters *parameter, SignalChannel* selectedChannel, double timestep_us, double currentstep_uA, QWidget *parent)
     : QDialog(parent)
 {
     //set the parameter, timestep, and currentstep objects, so that they can be accessed by other functions in stimparamdialog.cpp
@@ -43,6 +44,8 @@ StimParamDialog::StimParamDialog(StimParameters *parameter, QString nativeChanne
     timestep = timestep_us;
     currentstep = currentstep_uA;
     mainWindow = (MainWindow*) parent;
+    // channel properties will be needed later when the stim params are being saved
+    this->selectedChannel = selectedChannel;
     //create a new StimFigure
     stimFigure = new StimFigure(parameters, this);
 
@@ -537,7 +540,7 @@ StimParamDialog::StimParamDialog(StimParameters *parameter, QString nativeChanne
     mainLayout->addLayout(finalRow);
     setLayout(mainLayout);
 
-    setWindowTitle("Stimulation Parameters: " + nativeChannelName + " (" + customChannelName + ")");
+    setWindowTitle("Stimulation Parameters: " + selectedChannel->nativeChannelName + " (" + selectedChannel->customChannelName + ")");
     setFixedHeight(sizeHint().height());
     setFixedWidth(sizeHint().width());
 }
@@ -610,6 +613,13 @@ void StimParamDialog::loadParameters(StimParameters *parameters)
 /* Public slot that saves the values from the dialog box widgets into the parameters object, and closes the window */
 void StimParamDialog::accept()
 {
+    // check if close loop stim needs to be disabled
+    if (parameters->triggerSource == StimParameters::ClosedLoop &&
+        (StimParameters::TriggerSources)triggerSource->currentIndex() != StimParameters::ClosedLoop &&
+        enableStim->isChecked() )
+    {
+        mainWindow->ClosedLoopStimEnabled--;
+    }
     //save the values of the parameters from the dialog box into the object
     parameters->stimShape = (StimParameters::StimShapeValues) stimShape->currentIndex();
     parameters->stimPolarity = (StimParameters::StimPolarityValues) stimPolarity->currentIndex();
@@ -637,6 +647,18 @@ void StimParamDialog::accept()
 
     parameters->spikeDetectCalibWindow = calibWindow->currentText().toInt();
     parameters->spikeDetectionThr = thrSpikeDetectorLineEdit->text().toDouble();
+
+    // closed loop stim
+    if(parameters->triggerSource == StimParameters::ClosedLoop && enableStim->isChecked())
+    {
+        mainWindow->ClosedLoopStimEnabled++;
+        mainWindow->getSignalProcessorObj()->addSpikeDetectionChannel(selectedChannel->boardStream , selectedChannel->chipChannel);
+    }
+    if(!enableStim->isChecked())
+    {
+        mainWindow->ClosedLoopStimEnabled--;
+        mainWindow->getSignalProcessorObj()->remSpikeDetectionChannel(selectedChannel->boardStream , selectedChannel->chipChannel);
+    }
     //close the window
     done(Accepted);
 }
@@ -741,10 +763,6 @@ void StimParamDialog::enableWidgets()
         calibWindowLabel->setEnabled(enableStim->isChecked());
         thrSpikeDetectorLabel->setEnabled(enableStim->isChecked());
         thrSpikeDetectorLineEdit->setEnabled(enableStim->isChecked());
-        if(mainWindow->ClosedLoopStimEnabled > 0)
-        {
-            mainWindow->ClosedLoopStimEnabled--;
-        }
     }
     // stim is enabled but the selected option is also closed loop.
     else if(enableStim->isChecked() && triggerSource->currentIndex() == StimParameters::ClosedLoop)
@@ -753,7 +771,6 @@ void StimParamDialog::enableWidgets()
         calibWindowLabel->setEnabled(enableStim->isChecked());
         thrSpikeDetectorLabel->setEnabled(enableStim->isChecked());
         thrSpikeDetectorLineEdit->setEnabled(enableStim->isChecked());
-        mainWindow->ClosedLoopStimEnabled++;
     }
 
     /* Pulse Train Group Box */
@@ -834,7 +851,6 @@ void StimParamDialog::closeLoopStimIdxSelected(int idx)
         // enable the threshold text box.
         thrSpikeDetectorLabel->setEnabled(true);
         thrSpikeDetectorLineEdit->setEnabled(true);        
-        mainWindow->ClosedLoopStimEnabled++;
     }
     else
     {
@@ -842,13 +858,6 @@ void StimParamDialog::closeLoopStimIdxSelected(int idx)
         calibWindowLabel->setEnabled(false);
         thrSpikeDetectorLabel->setEnabled(false);
         thrSpikeDetectorLineEdit->setEnabled(false);
-        // the trigger source parameter is currently set to closed loop and has been changed in the GUI to be
-        // something other than closed loop. Since the closed loop stim trigger source has been unselected,
-        // decrement the closedloop stim counter.
-        if(mainWindow->ClosedLoopStimEnabled > 0 && parameters->triggerSource == StimParameters::ClosedLoop)
-        {
-            mainWindow->ClosedLoopStimEnabled--;
-        }
     }
 }
 

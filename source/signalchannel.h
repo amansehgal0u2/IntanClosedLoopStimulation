@@ -43,6 +43,11 @@ enum SignalType {
     BoardDigOutSignal
 };
 
+typedef struct channel_id{
+    unsigned int stream_id;
+    unsigned int chip_channel_id;
+}channel_id_t;
+
 class SignalChannel
 {
     friend QDataStream &operator<<(QDataStream &outStream, const SignalChannel &a);

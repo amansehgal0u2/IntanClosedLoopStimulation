@@ -40,13 +40,14 @@ class TimeSpinBox;
 class CurrentSpinBox;
 class StimFigure;
 class MainWindow;
+class SignalChannel;
 
 class StimParamDialog : public QDialog
 {
     Q_OBJECT
 
 public:
-    StimParamDialog(StimParameters *parameters, QString nativeChannelName, QString customChannelName, double timestep_us, double currentstep_uA, QWidget *parent = 0);
+    StimParamDialog(StimParameters *parameters, SignalChannel* selectedChannel, double timestep_us, double currentstep_uA, QWidget *parent = 0);
     ~StimParamDialog();
     void loadParameters(StimParameters* parameters);
 
@@ -59,6 +60,7 @@ private:
     QDialogButtonBox *buttonBox;
 
     StimFigure *stimFigure;
+    SignalChannel* selectedChannel;
 
     StimParameters *parameters;
     QGroupBox *stimWaveForm;

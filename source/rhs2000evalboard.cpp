@@ -1963,7 +1963,6 @@ void Rhs2000EvalBoard::setManualStimTrigger(int trigger, bool triggerOn)
         cerr << "Error in Rhs2000EvalBoard::setManualStimTrigger: trigger out of range." << endl;
         return;
     }
-
     dev->SetWireInValue(WireInManualTriggers, (triggerOn ? 1 : 0) << trigger, 1 << trigger);
     dev->UpdateWireIns();
 }

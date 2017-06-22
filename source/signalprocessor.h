@@ -29,16 +29,17 @@
 // The maximum number of Rhs2000DataBlock objects needed during normal data acquisition.
 // (Used in MainWindow::changeSampleRate(), maximum sample rate case.)
 #define MAX_NUM_BLOCKS_TO_READ 8
-
+#define NOISE_FLOOR_CALIBRATION_CONSTANT (double)0.6745
 using namespace std;
-
 class QDataStream;
 class SignalSources;
 class Rhs2000DataBlock;
 class RandomNumber;
 class FIRFilter;
+
 class SignalProcessor
 {
+
 public:
     SignalProcessor();
     ~SignalProcessor();
@@ -61,8 +62,8 @@ public:
     int saveBufferedData(queue<Rhs2000DataBlock> &bufferQueue, QDataStream &out, SaveFormat format, bool saveTtlOut, bool saveDcAmps, int timestampOffset);
     void createSaveList(SignalSources *signalSources, bool addTriggerChannel, int triggerChannel, double stimStepSize);
     void createTimestampFilename(QString path);
-    void calibrateSpikeDetector();
-    void runSpikeDetector();
+    int calibrateSpikeDetector(SignalSources *signalSources, double boardSampleRate, unsigned int numBlocks);
+    void runSpikeDetector(const QVector<QVector<bool> > &channelVisible);
     void openTimestampFile();
     void closeTimestampFile();
     void createSignalTypeFilenames(QString path);
@@ -77,7 +78,8 @@ public:
                            QVector<QVector<QVector<double> > > &measuredPhase,
                            int capIndex, int stream, int chipChannel,
                            int numBlocks, double sampleRate, double frequency, int numPeriods);
-
+    void addSpikeDetectionChannel(unsigned int boardStream, unsigned int chipChannel);
+    void remSpikeDetectionChannel(unsigned int boardStream, unsigned int chipChannel);
     // QVector<QVector<QVector<double> > > amplifierPreFilter;
     double* amplifierPreFilterFast;
     bool spikeDetectorCalibrated;
@@ -118,6 +120,9 @@ private:
     QVector<SignalChannel*> saveListBoardDigitalOut;
     QVector<int> posStimAmplitudeList;
     QVector<int> negStimAmplitudeList;
+    QList<double*> spikeDetectorCalib_heapList;
+    QList<channel_id_t> spikeDetection_channelIdList;
+    QList<double> spikeDetection_NoiseEstMedian;
 
     QString timestampFileName;
     QFile *timestampFile;

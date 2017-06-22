@@ -43,6 +43,8 @@ SignalSources::SignalSources(int numPorts)
     signalPort.resize(numPorts + 4);
 
     for (i = 0; i < numPorts; i++) {
+        // Ports A,B,C,D - 4 spi ports each consisting of a stream
+        // of channels from a single head stage chips
         signalPort[i].name = "Port " + QString(QChar(65 + i));
         signalPort[i].prefix = QString(QChar(65 + i));
         signalPort[i].enabled = false;
@@ -108,7 +110,6 @@ SignalChannel* SignalSources::findChannelFromName(const QString &nativeName)
 SignalChannel* SignalSources::findAmplifierChannel(int boardStream, int chipChannel)
 {
     SignalChannel *channel;
-
     for (int i = 0; i < signalPort.size(); ++i) {
         for (int j = 0; j < signalPort[i].numChannels(); ++j) {
             if (signalPort[i].channel[j].signalType == AmplifierSignal &&

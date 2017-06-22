@@ -15,35 +15,11 @@
  *
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
- *
- * USAGE
- * while(data_to_be_filtered){
- * 	x = // Get next sample
- * 	y = filter->do_sample( x );
  */
 
-#ifndef _FILTER_H
-#define _FILTER_H
+#ifndef ERRORCODES_H
+#define ERRORCODES_H
 
-#include <math.h>
-#include <stdlib.h>
-#include <unistd.h>
-#include <QVector>
-
-class FIRFilter{
-	private:
-		int m_num_taps;
-		double *m_taps;
-        unsigned int spikeBandFilterSamplingFreqIdx;
-        double *spikeBandFIRCoeffs[3];
-
-        QVector<QVector<QVector<double>>> m_sr;
-	public:
-        void setSpikeBandFilterSamplingFreq(unsigned int sr);
-        void initFilterVectors(unsigned int x , unsigned int y);
-        FIRFilter();
-        ~FIRFilter( );
-        double filter(double x, unsigned int stream, unsigned int channel);
-};
-
-#endif
+#define EXIT_NULLPTR_EXCEPTION -1
+#define EXIT_SUCCESS 0
+#endif // ERRORCODES_H
