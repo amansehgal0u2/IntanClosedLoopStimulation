@@ -49,7 +49,7 @@ int main(int argc, char *argv[])
     splash->setWindowFlags(Qt::WindowStaysOnBottomHint); // not sure if we need this for Linux, but let's be safe
 #endif
     splash->show();
-    splash->showMessage(QObject::tr("Starting Intan Technologies Stimulation / Recording Controller v1.01..."), Qt::AlignCenter | Qt::AlignBottom, Qt::black);
+    splash->showMessage(QObject::tr("Starting Intan Technologies Stimulation / Recording Controller v1.02..."), Qt::AlignCenter | Qt::AlignBottom, Qt::black);
 
     int sampleRateIndex, stimStepIndex;
     StartUpDialog *startUpDialog = new StartUpDialog(&sampleRateIndex, &stimStepIndex);

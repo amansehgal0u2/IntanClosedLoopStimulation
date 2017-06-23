@@ -37,6 +37,7 @@ StimParameters::StimParameters()
 
     enabled = false;
     triggerSource = StimParameters::DigitalIn1;
+    triggerSourceDisplay = triggerSource;
     triggerEdgeOrLevel = StimParameters::Edge;
     triggerHighOrLow = StimParameters::High;
     postTriggerDelay = 0;
@@ -71,6 +72,7 @@ void StimParameters::copyStimParameters(StimParameters *source)
 
     enabled = source->enabled;
     triggerSource = source->triggerSource;
+    triggerSourceDisplay = source->triggerSourceDisplay;
     triggerEdgeOrLevel = source->triggerEdgeOrLevel;
     triggerHighOrLow = source->triggerHighOrLow;
     postTriggerDelay = source->postTriggerDelay;
@@ -105,6 +107,7 @@ void StimParameters::pasteStimParameters(StimParameters *destination)
 
     destination->enabled = enabled;
     destination->triggerSource = triggerSource;
+    destination->triggerSourceDisplay = triggerSourceDisplay;
     destination->triggerEdgeOrLevel = triggerEdgeOrLevel;
     destination->triggerHighOrLow = triggerHighOrLow;
     destination->postTriggerDelay = postTriggerDelay;
@@ -136,6 +139,7 @@ void StimParameters::writeXml(QXmlStreamWriter &xml, SignalType signalType)
 
     xml.writeTextElement("enabled", QString::number((int)enabled));
     xml.writeTextElement("triggerSource", QString::number((int)triggerSource));
+    xml.writeTextElement("triggerSourceDisplay", QString::number((int)triggerSourceDisplay));
     xml.writeTextElement("triggerEdgeOrLevel", QString::number((int)triggerEdgeOrLevel));
     xml.writeTextElement("triggerHighOrLow", QString::number((int)triggerHighOrLow));
     xml.writeTextElement("postTriggerDelay", QString::number(postTriggerDelay));
@@ -145,7 +149,7 @@ void StimParameters::writeXml(QXmlStreamWriter &xml, SignalType signalType)
     xml.writeTextElement("refractoryPeriod", QString::number(refractoryPeriod));
 
     // closed loop stimulation based on spike detection
-    if (triggerSource==ClosedLoop)
+    if (triggerSourceDisplay==ClosedLoop)
     {
         xml.writeTextElement("spikeDetectCalibWindow",QString::number(spikeDetectCalibWindow));
         xml.writeTextElement("spikeDetectionThr",QString::number(spikeDetectionThr));

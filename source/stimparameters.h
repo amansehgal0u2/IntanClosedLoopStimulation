@@ -80,6 +80,7 @@ public:
     double baselineVoltage;
 
     TriggerSources triggerSource;
+    TriggerSources triggerSourceDisplay;
     TriggerEdgeOrLevels triggerEdgeOrLevel;
     TriggerHighOrLows triggerHighOrLow;
     bool enabled;

@@ -46,6 +46,7 @@ enum SignalType {
 typedef struct channel_id{
     unsigned int stream_id;
     unsigned int chip_channel_id;
+    unsigned int trigger;
 }channel_id_t;
 
 class SignalChannel

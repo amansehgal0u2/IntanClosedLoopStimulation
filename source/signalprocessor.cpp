@@ -80,6 +80,8 @@ SignalProcessor::SignalProcessor()
     synthTimeStamp = 0;
 
     amplifierPreFilterFast = nullptr;
+    availableStimTriggers.resize(StimParameters::KeyPress8 - StimParameters::KeyPress1 + 1);
+    availableStimTriggers.fill(0);// all triggers available on program start
 }
 
 SignalProcessor::~SignalProcessor()
@@ -2174,24 +2176,55 @@ void SignalProcessor::amplitudeOfFreqComponent(double &realComponent, double &im
     imagComponent = 2.0 * meanQ;
 }
 
-// insert a new channel to perform spike detection with
-// building this list will speed up code and prevent running nested loops on the channel each time
-void SignalProcessor::addSpikeDetectionChannel(unsigned int boardStream, unsigned int chipChannel)
+void SignalProcessor::addManualTrigChannel(unsigned int trig)
 {
-    channel_id_t temp = {.stream_id = boardStream, .chip_channel_id = chipChannel};
+    if (trig < availableStimTriggers.size())
+        availableStimTriggers[trig]++;
+}
+
+void SignalProcessor::remManualTrigChannel(unsigned int trig)
+{
+    if (trig < availableStimTriggers.size())
+        availableStimTriggers[trig]--;
+}
+// insert a new channel to perform spike detection with
+// building this list will speed up code and prevent running nested loops on the entire channel buffer each time.
+// The function returns the trigger that was assigned to the channel.
+unsigned int SignalProcessor::addSpikeDetectionChannel(unsigned int boardStream, unsigned int chipChannel)
+{
+    unsigned int trig = this->availableStimTriggers.indexOf(0);
+    availableStimTriggers[trig]=-1; // -1 for closed loop stim trigger
+    channel_id_t temp = {.stream_id = boardStream, .chip_channel_id = chipChannel, .trigger = trig};
     this->spikeDetection_channelIdList.append(temp);
+    return trig;
+}
+// returns true if a manual stim trigger is available.
+// No argument - returns true if a slot is available for closed loop stim.
+// non-negative argument -  returns true if it is available for use as a manual trigger
+bool SignalProcessor::closedLoopStimTriggersAvailable(int trigger)
+{
+    // indexOf returns a -1 when the index is not found so add 1 to shift it up to a 0
+    // which corresponds to a false
+    if (trigger == -1)
+        return (bool)(availableStimTriggers.indexOf(0)+1);
+    else if (trigger < availableStimTriggers.size())
+        return (bool)(availableStimTriggers[trigger]+1);
+    else
+        return false;
+
 }
 
 // remove the channel from this list if the spike detection is disabled on this channel
 void SignalProcessor::remSpikeDetectionChannel(unsigned int boardStream, unsigned int chipChannel)
 {
     if (!spikeDetection_channelIdList.isEmpty())
-    {
+    {        
         for (int i = 0; i<this->spikeDetection_channelIdList.size(); i++)
         {
             if(spikeDetection_channelIdList.at(i).chip_channel_id == chipChannel &&
                spikeDetection_channelIdList.at(i).stream_id == boardStream)
             {
+                availableStimTriggers[spikeDetection_channelIdList[i].trigger]=0;
                 spikeDetection_channelIdList.removeAt(i);
                 break;
             }
@@ -2219,9 +2252,9 @@ int SignalProcessor::calibrateSpikeDetector(SignalSources *signalSources, double
     {
         notDone = numChannels; // update in case the number of channles to run the detector on have changed
         // when re-calibrating erase the list
-        if (!spikeDetection_NoiseEstMedian.isEmpty())
+        if (!spikeDetection_NoiseEstStdDev.isEmpty())
         {
-            spikeDetection_NoiseEstMedian.clear();
+            spikeDetection_NoiseEstStdDev.clear();
         }
         if(numSamples_channel == nullptr)
         {
@@ -2307,7 +2340,7 @@ int SignalProcessor::calibrateSpikeDetector(SignalSources *signalSources, double
                             spikeDetectorCalib_heapList[i][numSamples_channel[i] / 2] : // odd number of elements
                             (spikeDetectorCalib_heapList[i][numSamples_channel[i] / 2 - 1] + spikeDetectorCalib_heapList[i][numSamples_channel[i] / 2]) / 2; // even number of elements
 
-            spikeDetection_NoiseEstMedian.append(median); // add the median to the list for real-time stim signals
+            spikeDetection_NoiseEstStdDev.append(median); // add the median to the list for real-time stim signals
         }
         // calibration done. Prevents the runBoardInterface() loop from re-doing the calibration routine
         spikeDetectorCalibrated = true;

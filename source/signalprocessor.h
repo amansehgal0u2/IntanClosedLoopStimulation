@@ -78,8 +78,11 @@ public:
                            QVector<QVector<QVector<double> > > &measuredPhase,
                            int capIndex, int stream, int chipChannel,
                            int numBlocks, double sampleRate, double frequency, int numPeriods);
-    void addSpikeDetectionChannel(unsigned int boardStream, unsigned int chipChannel);
+    unsigned int addSpikeDetectionChannel(unsigned int boardStream, unsigned int chipChannel);
+    void addManualTrigChannel(unsigned int trig);
+    void remManualTrigChannel(unsigned int trig);
     void remSpikeDetectionChannel(unsigned int boardStream, unsigned int chipChannel);
+    bool closedLoopStimTriggersAvailable(int trigger = -1);
     // QVector<QVector<QVector<double> > > amplifierPreFilter;
     double* amplifierPreFilterFast;
     bool spikeDetectorCalibrated;
@@ -122,7 +125,8 @@ private:
     QVector<int> negStimAmplitudeList;
     QList<double*> spikeDetectorCalib_heapList;
     QList<channel_id_t> spikeDetection_channelIdList;
-    QList<double> spikeDetection_NoiseEstMedian;
+    QList<double> spikeDetection_NoiseEstStdDev;
+    QVector<int> availableStimTriggers; // directory for tracking availability of manual triggers
 
     QString timestampFileName;
     QFile *timestampFile;

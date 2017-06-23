@@ -1367,7 +1367,11 @@ void MainWindow::about()
 {
     QMessageBox::about(this, tr("About Intan Technologies Stimulation / Recording Controller"),
             tr("<h2>Intan Technologies Stimulation / Recording Controller</h2>"
-               "<p>Version 1.01"
+               "<p>Version 1.02"
+               "<p> This version extends the capabilities of the Intan Tool "
+               "to implement spike-detection with closed loop stimulation in a feedback loop."
+               "<p> The extension to this tool was implemented by Aman Sehgal at the University of Pennsylvania"
+               "under the auspices of Dr. Flavia Vitale at the Center for Neuro Engineering and Therapeutics."
                "<p>Copyright &copy; 2017 Intan Technologies"
                "<p>This application controls the "
                "128 Channel Stimulation / Recording Controller "
@@ -2166,6 +2170,7 @@ int MainWindow::openInterfaceBoard(bool& expanderBoardDetected)
 
     evalBoard->readDigitalInManual(expanderBoardDetected);
     evalBoard->readDigitalInExpManual();
+
     return 4;
 }
 
@@ -3072,7 +3077,7 @@ void MainWindow::runInterfaceBoard()
                 {
                     // run spike detector once calibration is done
                     this->updateStatusBarText("Running Spike Detector with Closed Loop Stim.");
-                    signalProcessor->runSpikeDetector(const QVector<QVector<bool> > &channelVisible);
+                    signalProcessor->runSpikeDetector(channelVisible);
                 }
             }
             // close loop stim is disabled so re-calibrate the spike detector
@@ -5052,7 +5057,9 @@ void MainWindow::loadStimSettings()
                                     channel->stimParameters->enabled = (bool)xml.readElementText().toInt();                                    
                                 } else if (xml.name() == "triggerSource") {
                                     channel->stimParameters->triggerSource = (StimParameters::TriggerSources)xml.readElementText().toInt();
-                                    if (channel->stimParameters->enabled && channel->stimParameters->triggerSource == StimParameters::ClosedLoop)
+                                } else if (xml.name() == "triggerSourceDisplay") {
+                                    channel->stimParameters->triggerSourceDisplay = (StimParameters::TriggerSources)xml.readElementText().toInt();
+                                    if (channel->stimParameters->enabled && channel->stimParameters->triggerSourceDisplay == StimParameters::ClosedLoop)
                                     {
                                         this->ClosedLoopStimEnabled++;
                                     }
