@@ -95,7 +95,7 @@ double FIRFilter::filter(double x, unsigned int stream, unsigned int channel)
     // run the filter using the FIR coeffs
     for(int i = 0; i < m_num_taps; i++)
     {
-        y += m_sr.at(stream).at(channel).at(i) * m_taps[i];
+        y += m_sr.at(stream).at(channel).at(i) * m_taps[m_num_taps-i-1];
     }
     return y;
 }

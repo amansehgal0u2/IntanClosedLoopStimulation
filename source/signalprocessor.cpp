@@ -2194,7 +2194,7 @@ unsigned int SignalProcessor::addSpikeDetectionChannel(unsigned int boardStream,
 {
     unsigned int trig = this->availableStimTriggers.indexOf(0);
     availableStimTriggers[trig]=-1; // -1 for closed loop stim trigger
-    channel_id_t temp = {.stream_id = boardStream, .chip_channel_id = chipChannel, .trigger = trig, .calibrated = false};
+    channel_id_t temp = {.stream_id = boardStream, .chip_channel_id = chipChannel, .trigger = trig, .calibrated = false , .numSigma = 0.0 , .stddev = 0.0};
     this->spikeDetection_channelIdList.append(temp);
     return trig;
 }
@@ -2284,7 +2284,7 @@ int SignalProcessor::calibrateSpikeDetector(SignalSources *signalSources, double
     // filtered data and begin noise floor estimation
     for (unsigned int i = 0; i < numChannels; i++)
     {
-        if (spikeDetection_channelIdList.at(i).calibrated == false)
+        if (spikeDetection_channelIdList.at(i).calibrated == false && notDone)
         {
             // calibration isn't done so shift samples into the buffer for this channel
             channel_id_t channel = spikeDetection_channelIdList.at(i);
@@ -2307,12 +2307,16 @@ int SignalProcessor::calibrateSpikeDetector(SignalSources *signalSources, double
                     sampleIdx_channel[i]++; t++;
                 }
             }
-            // all samples for this channel have been accumulated. Calibration is now complete.
+            // all samples for this channel have been accumulated so mark it as done.
             else
-            {
-                spikeDetection_channelIdList[i].calibrated = true;
+            {                
                 notDone--;
             }
+        }
+        else if (notDone > 0)
+        {
+            // this channel was already calibrated so mark it as done
+            notDone--;
         }
     }
     // noise floor estimation is now done.
@@ -2322,14 +2326,18 @@ int SignalProcessor::calibrateSpikeDetector(SignalSources *signalSources, double
     {
         for (unsigned int i = 0; i < numChannels; i++)
         {
-            // sort array elements
-            qSort(spikeDetectorCalib_heapList[i], spikeDetectorCalib_heapList[i]+numSamples_channel[i]);
+            if (spikeDetection_channelIdList[i].calibrated == false)
+            {
+                // sort array elements
+                qSort(spikeDetectorCalib_heapList[i], spikeDetectorCalib_heapList[i]+numSamples_channel[i]);
 
-            double median = numSamples_channel[i] % 2 ? // check if the number of elements is even: returns 1 if odd
-                            spikeDetectorCalib_heapList[i][numSamples_channel[i] / 2] : // odd number of elements
-                            (spikeDetectorCalib_heapList[i][numSamples_channel[i] / 2 - 1] + spikeDetectorCalib_heapList[i][numSamples_channel[i] / 2]) / (double)2.0; // even number of elements
+                double median = numSamples_channel[i] % 2 ? // check if the number of elements is even: returns 1 if odd
+                                spikeDetectorCalib_heapList[i][numSamples_channel[i] / 2] : // odd number of elements
+                                (spikeDetectorCalib_heapList[i][numSamples_channel[i] / 2 - 1] + spikeDetectorCalib_heapList[i][numSamples_channel[i] / 2]) / (double)2.0; // even number of elements
 
-            spikeDetection_channelIdList[i].stddev =  median; // add the median to the list for real-time stim signals
+                spikeDetection_channelIdList[i].stddev =  median; // add the median to the list for real-time stim signals
+                spikeDetection_channelIdList[i].calibrated = true; // this channel has been calibrated
+            }
         }
         // calibration done. Prevents the runBoardInterface() loop from re-doing the calibration routine
         spikeDetectorCalibrated = true;
