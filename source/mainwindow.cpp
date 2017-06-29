@@ -176,7 +176,7 @@ MainWindow::MainWindow(int sampleRateIndex_, int stimStepIndex)
     }
 
     // contains all the filters and synthetic wave form generators
-    signalProcessor = new SignalProcessor();
+    signalProcessor = new SignalProcessor(this);
     notchFilterFrequency = 60.0;
     notchFilterBandwidth = 10.0;
     notchFilterEnabled = false;
@@ -2096,6 +2096,11 @@ void MainWindow::changeSampleRate(int sampleRateIndex, bool updateStimParams)
     wavePlot->setFocus();
 }
 
+double MainWindow::getBoardSampleRate()
+{
+    return this->boardSampleRate;
+}
+
 // Attempt to open a USB interface board connected to a USB port.  Returns number of SPI ports, and
 // indicates whether I/O expander board is connected.
 int MainWindow::openInterfaceBoard(bool& expanderBoardDetected)
@@ -3077,7 +3082,7 @@ void MainWindow::runInterfaceBoard()
                 {
                     // run spike detector once calibration is done
                     this->updateStatusBarText("Running Spike Detector with Closed Loop Stim.");
-                    signalProcessor->runSpikeDetector(channelVisible);
+                    signalProcessor->runSpikeDetector(channelVisible, numUsbBlocksToRead);
                 }
             }
             // close loop stim is disabled so re-calibrate the spike detector

@@ -41,7 +41,7 @@ class SignalProcessor
 {
 
 public:
-    SignalProcessor();
+    SignalProcessor(MainWindow* mainWindow);
     ~SignalProcessor();
 
     void allocateMemory(int numStreams);
@@ -63,7 +63,7 @@ public:
     void createSaveList(SignalSources *signalSources, bool addTriggerChannel, int triggerChannel, double stimStepSize);
     void createTimestampFilename(QString path);
     int calibrateSpikeDetector(SignalSources *signalSources, double boardSampleRate, unsigned int numBlocks);
-    void runSpikeDetector(const QVector<QVector<bool> > &channelVisible);
+    void runSpikeDetector(const QVector<QVector<bool> > &channelVisible, unsigned int numBlocks);
     void openTimestampFile();
     void closeTimestampFile();
     void createSignalTypeFilenames(QString path);
@@ -102,7 +102,7 @@ private:
     QVector<QVector<QVector<double> > > prevAmplifierPreFilter;
     QVector<QVector<QVector<double> > > prevAmplifierPostFilter;
     QVector<QVector<double> > highpassFilterState;
-
+    MainWindow* mainWindow;
     int numDataStreams;
     double a1;
     double a2;
@@ -125,7 +125,6 @@ private:
     QVector<int> negStimAmplitudeList;
     QList<double*> spikeDetectorCalib_heapList;
     QList<channel_id_t> spikeDetection_channelIdList;
-    QList<double> spikeDetection_NoiseEstStdDev;
     QVector<int> availableStimTriggers; // directory for tracking availability of manual triggers
 
     QString timestampFileName;

@@ -47,6 +47,9 @@ typedef struct channel_id{
     unsigned int stream_id;
     unsigned int chip_channel_id;
     unsigned int trigger;
+    double numSigma;
+    bool calibrated;
+    double stddev;
 }channel_id_t;
 
 class SignalChannel

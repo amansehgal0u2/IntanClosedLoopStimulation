@@ -102,6 +102,7 @@ public:
     QVector<QVector<bool> > channelVisible;
 
     int getEvalBoardMode();
+    double getBoardSampleRate();
     bool isRecording();
     ReferenceSource getReferenceSource();
     bool markerMode();

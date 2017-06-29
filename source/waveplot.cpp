@@ -950,7 +950,7 @@ void WavePlot::drawAxisText(QPainter &painter, int frameNumber)
     bool stimEnabled =
             selectedChannel(frameNumber + topLeftFrame[selectedPort])->stimParameters->enabled;
     StimParameters::TriggerSources triggerSource =
-            selectedChannel(frameNumber + topLeftFrame[selectedPort])->stimParameters->triggerSource;
+            selectedChannel(frameNumber + topLeftFrame[selectedPort])->stimParameters->triggerSourceDisplay;
 
     if (stimEnabled) {
         QString triggerName;
