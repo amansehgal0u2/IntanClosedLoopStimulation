@@ -49,6 +49,7 @@ public:
     void setDigitalTriggerChannel(int channel);
     void setDigitalEdgePolarity(bool risingEdge);
     void setNewChannel(SignalChannel* newChannel);
+    void resetVoltageThresholdLine();
 
     QSize minimumSizeHint() const;
     QSize sizeHint() const;

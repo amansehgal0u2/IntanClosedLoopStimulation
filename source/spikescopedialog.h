@@ -33,7 +33,7 @@ class SpikePlot;
 class SignalProcessor;
 class SignalSources;
 class SignalChannel;
-
+class MainWindow;
 class SpikeScopeDialog : public QDialog
 {
     Q_OBJECT
@@ -81,7 +81,7 @@ private:
     QComboBox *yScaleComboBox;
 
     QSpinBox *thresholdSpinBox;
-
+    MainWindow* mainWindow;
     SpikePlot *spikePlot;
 };
 

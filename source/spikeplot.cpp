@@ -360,7 +360,6 @@ void SpikePlot::updateSpikePlot(double rms)
         for (i = 0; i < totalTSteps; ++i) {
             polyline[i] = QPointF(xScaleFactor * i + xOffset, yScaleFactor * spikeWaveform.at((j + 30) % spikeWaveform.size()).at(i) + yOffset);
         }
-
         // Draw waveform
         painter.setPen(scopeColors.at(colorIndex).at(index++));
         painter.drawPolyline(polyline, totalTSteps);
@@ -395,6 +394,41 @@ void SpikePlot::updateSpikePlot(double rms)
                       " " + QSTRING_MU_SYMBOL + "V");
 
     delete [] polyline;
+    update();
+}
+
+// update the threshold line when 0 button is clicked
+// This function is currently only needed to support
+// the spike plot when not running.
+void SpikePlot::resetVoltageThresholdLine()
+{
+    double xScaleFactor, yScaleFactor;
+    const double tScale = 3.0;
+    int xOffset, yOffset;
+    double yAxisLength, tAxisLength;
+
+
+    drawAxisLines();
+
+    QPainter painter(&pixmap);
+    painter.initFrom(this);
+
+    QRect adjustedFrame = frame;
+    adjustedFrame.adjust(0, 1, 0, 0);
+    painter.setClipRect(adjustedFrame);
+
+    xOffset = frame.left() + 1;
+    yOffset = frame.center().y();
+
+    yAxisLength = (frame.height() - 2) / 2.0;
+    tAxisLength = frame.width() - 1;
+
+    xScaleFactor = tAxisLength * tStepMsec / tScale;
+    yScaleFactor = -yAxisLength / yScale;
+
+    painter.setPen(Qt::red);
+    painter.drawLine(xOffset, yScaleFactor * 0.0 + yOffset,
+                      xScaleFactor * (totalTSteps - 1) +  xOffset, yScaleFactor * 0.0 + yOffset);
     update();
 }
 

@@ -30,7 +30,7 @@
 #include "signalchannel.h"
 #include "signalgroup.h"
 #include "spikeplot.h"
-
+#include "mainwindow.h"
 // Spike scope dialog.
 // This dialog allows users to view 3-msec snippets of neural spikes triggered
 // either from a selectable voltage threshold or a digital input threshold.  Multiple
@@ -44,7 +44,7 @@ SpikeScopeDialog::SpikeScopeDialog(SignalProcessor *inSignalProcessor, SignalSou
 
     signalProcessor = inSignalProcessor;
     signalSources = inSignalSources;
-
+    mainWindow = static_cast<MainWindow*>(parent);
     spikePlot = new SpikePlot(signalProcessor, initialChannel, this, this);
     currentChannel = initialChannel;
 
@@ -211,6 +211,8 @@ void SpikeScopeDialog::setTriggerType(int index)
 void SpikeScopeDialog::resetThresholdToZero()
 {
     thresholdSpinBox->setValue(0);
+    if(!mainWindow->isRunning())
+        spikePlot->resetVoltageThresholdLine();
 }
 
 void SpikeScopeDialog::updateWaveform(int numBlocks)

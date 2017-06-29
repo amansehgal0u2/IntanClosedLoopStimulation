@@ -176,7 +176,7 @@ MainWindow::MainWindow(int sampleRateIndex_, int stimStepIndex)
     }
 
     // contains all the filters and synthetic wave form generators
-    signalProcessor = new SignalProcessor(this);
+    signalProcessor = new SignalProcessor();
     notchFilterFrequency = 60.0;
     notchFilterBandwidth = 10.0;
     notchFilterEnabled = false;
@@ -2720,6 +2720,10 @@ void MainWindow::writeSaveFileHeader(QDataStream &outStream, QDataStream &infoSt
         break;
     }
 }
+bool MainWindow::isRunning()
+{
+    return this->running;
+}
 
 // Start SPI communication to all connected RHS2000 amplifiers and stream
 // waveform data over USB port.
@@ -3082,7 +3086,7 @@ void MainWindow::runInterfaceBoard()
                 {
                     // run spike detector once calibration is done
                     this->updateStatusBarText("Running Spike Detector with Closed Loop Stim.");
-                    signalProcessor->runSpikeDetector(channelVisible, numUsbBlocksToRead);
+                    signalProcessor->runSpikeDetector(channelVisible, numUsbBlocksToRead, boardSampleRate, this);
                 }
             }
             // close loop stim is disabled so re-calibrate the spike detector
@@ -3147,7 +3151,9 @@ void MainWindow::runInterfaceBoard()
                                              "board reached maximum capacity.  This happens when the host computer "
                                              "cannot keep up with the data streaming from the interface board."
                                              "<p>Try lowering the sample rate, disabling the notch filter, or reducing "
-                                             "the number of waveforms on the screen to reduce CPU load."));
+                                             "the number of waveforms on the screen to reduce CPU load. <p>The spike band filter "
+                                             "can also exacerbate this. Try disabling some channels in order to lower the "
+                                             "number of channels that are being filtered by the spike band filter."));
                 }
             } else if (hasBeenUpdated) {
                 fifoNearlyFull = 0;

@@ -54,7 +54,7 @@ using namespace std;
 // generating synthetic neural or ECG data for demonstration purposes.
 
 // Constructor.
-SignalProcessor::SignalProcessor(MainWindow* mainWindow )
+SignalProcessor::SignalProcessor()
 {
     // Notch filter initial parameters.
     notchFilterEnabled = false;
@@ -78,7 +78,6 @@ SignalProcessor::SignalProcessor(MainWindow* mainWindow )
     // Other synthetic waveform variables.
     tPulse = 0.0;
     synthTimeStamp = 0;
-    this->mainWindow = mainWindow;
     amplifierPreFilterFast = nullptr;
     availableStimTriggers.resize(StimParameters::KeyPress8 - StimParameters::KeyPress1 + 1);
     availableStimTriggers.fill(0);// all triggers available on program start
@@ -2355,7 +2354,7 @@ int SignalProcessor::calibrateSpikeDetector(SignalSources *signalSources, double
     return EXIT_SUCCESS;
 }
 
-void SignalProcessor::runSpikeDetector(const QVector<QVector<bool> > &channelVisible, unsigned int numBlocks)
+void SignalProcessor::runSpikeDetector(const QVector<QVector<bool> > &channelVisible, unsigned int numBlocks, double boardSampleRate, MainWindow* mainWindow)
 {
     unsigned int length = SAMPLES_PER_DATA_BLOCK * numBlocks;;
     // detect spikes on all the channels
@@ -2378,7 +2377,7 @@ void SignalProcessor::runSpikeDetector(const QVector<QVector<bool> > &channelVis
                     mainWindow->setManualStimTrigger(channel.trigger, false);
                     // skip 2ms of data. Dont want to keep stimulating if we detect a spike
                     // since, ideally, only one stim pulse per spike would be ideal
-                    t+= (unsigned int)((mainWindow->getBoardSampleRate()/1000.0)*2);
+                    t+= (unsigned int)((boardSampleRate/1000.0)*2);
                 }
             }
         }

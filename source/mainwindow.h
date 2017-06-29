@@ -107,6 +107,7 @@ public:
     ReferenceSource getReferenceSource();
     bool markerMode();
     bool resetXOnMarker();
+    bool isRunning();
     int markerChannel();
     bool showV0Axis();
     void setManualStimTrigger(int trigger, bool triggerOn);

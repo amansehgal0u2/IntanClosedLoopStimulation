@@ -41,7 +41,7 @@ class SignalProcessor
 {
 
 public:
-    SignalProcessor(MainWindow* mainWindow);
+    SignalProcessor();
     ~SignalProcessor();
 
     void allocateMemory(int numStreams);
@@ -63,7 +63,7 @@ public:
     void createSaveList(SignalSources *signalSources, bool addTriggerChannel, int triggerChannel, double stimStepSize);
     void createTimestampFilename(QString path);
     int calibrateSpikeDetector(SignalSources *signalSources, double boardSampleRate, unsigned int numBlocks);
-    void runSpikeDetector(const QVector<QVector<bool> > &channelVisible, unsigned int numBlocks);
+    void runSpikeDetector(const QVector<QVector<bool> > &channelVisible, unsigned int numBlocks, double boardSampleRate, MainWindow* mainWindow);
     void openTimestampFile();
     void closeTimestampFile();
     void createSignalTypeFilenames(QString path);
@@ -102,7 +102,6 @@ private:
     QVector<QVector<QVector<double> > > prevAmplifierPreFilter;
     QVector<QVector<QVector<double> > > prevAmplifierPostFilter;
     QVector<QVector<double> > highpassFilterState;
-    MainWindow* mainWindow;
     int numDataStreams;
     double a1;
     double a2;
