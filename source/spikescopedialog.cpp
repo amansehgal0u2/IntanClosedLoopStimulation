@@ -58,15 +58,18 @@ SpikeScopeDialog::SpikeScopeDialog(SignalProcessor *inSignalProcessor, SignalSou
             this, SLOT(clearScope()));
     connect(applyToAllButton, SIGNAL(clicked()),
             this, SLOT(applyToAll()));
-
+    //------------------------------------------------------------
+    // trigger type selection components
     triggerTypeComboBox = new QComboBox();
     triggerTypeComboBox->addItem(tr("Voltage Threshold"));
     triggerTypeComboBox->addItem(tr("Digital Input"));
+    triggerTypeComboBox->addItem(tr("Voltage Band-Time Discriminator"));
     triggerTypeComboBox->setCurrentIndex(0);
 
     connect(triggerTypeComboBox, SIGNAL(currentIndexChanged(int)),
             this, SLOT(setTriggerType(int)));
-
+    //------------------------------------------------------------
+    //threshold spike detection components
     thresholdSpinBox = new QSpinBox();
     thresholdSpinBox->setRange(-5000, 5000);
     thresholdSpinBox->setSingleStep(5);
@@ -80,7 +83,31 @@ SpikeScopeDialog::SpikeScopeDialog(SignalProcessor *inSignalProcessor, SignalSou
     thresholdSpinBoxLayout->addWidget(thresholdSpinBox);
     thresholdSpinBoxLayout->addWidget(new QLabel(QSTRING_MU_SYMBOL + "V"));
     // thresholdSpinBoxLayout->addStretch(1);
+    //------------------------------------------------------------
 
+    // voltage band-time (vbt) discriminator layout components
+    vbtSpinBox1 = new QSpinBox();
+    vbtSpinBox1->setRange(-5000, 5000);
+    vbtSpinBox1->setSingleStep(5);
+    vbtSpinBox1->setValue(0);
+
+    vbtSpinBox2 = new QSpinBox();
+    vbtSpinBox2->setRange(-5000, 5000);
+    vbtSpinBox2->setSingleStep(5);
+    vbtSpinBox2->setValue(0);
+
+    QHBoxLayout *vbtSpinBoxLayout1 = new QHBoxLayout;
+    vbtSpinBoxLayout1->addWidget(vbtSpinBox1);
+    vbtSpinBoxLayout1->addWidget(new QLabel("V1:("  + QSTRING_MU_SYMBOL + "V)"));
+
+    QHBoxLayout *vbtSpinBoxLayout2 = new QHBoxLayout;
+    vbtSpinBoxLayout2->addWidget(vbtSpinBox2);
+    vbtSpinBoxLayout2->addWidget(new QLabel("V2:("  + QSTRING_MU_SYMBOL + "V)"));
+
+    QVBoxLayout *vbtSpinBoxLayout = new QVBoxLayout;
+    vbtSpinBoxLayout->addLayout(vbtSpinBoxLayout1);
+    vbtSpinBoxLayout->addLayout(vbtSpinBoxLayout2);
+    //------------------------------------------------------------
     digitalInputComboBox = new QComboBox();
     digitalInputComboBox->addItem(tr("DIGITAL IN 1"));
     digitalInputComboBox->addItem(tr("DIGITAL IN 2"));
@@ -147,6 +174,8 @@ SpikeScopeDialog::SpikeScopeDialog(SignalProcessor *inSignalProcessor, SignalSou
     triggerLayout->addWidget(new QLabel(tr("Digital Source:")));
     triggerLayout->addWidget(digitalInputComboBox);
     triggerLayout->addWidget(edgePolarityComboBox);
+    triggerLayout->addWidget(new QLabel(tr("Voltage-Time Discriminator:")));
+    triggerLayout->addLayout(vbtSpinBoxLayout);
 
     QVBoxLayout *displayLayout = new QVBoxLayout;
     displayLayout->addWidget(new QLabel(tr("Voltage Scale:")));
@@ -199,6 +228,7 @@ void SpikeScopeDialog::setSampleRate(double newSampleRate)
 
 // Select a voltage trigger if index == 0.
 // Select a digital input trigger if index == 1.
+// select a voltage-time discriminator trigger if index == 2.
 void SpikeScopeDialog::setTriggerType(int index)
 {
     thresholdSpinBox->setEnabled(index == 0);
@@ -206,6 +236,8 @@ void SpikeScopeDialog::setTriggerType(int index)
     digitalInputComboBox->setEnabled(index == 1);
     edgePolarityComboBox->setEnabled(index == 1);
     spikePlot->setVoltageTriggerMode(index == 0);
+    vbtSpinBox1->setEnabled(index==2);
+    vbtSpinBox2->setEnabled(index==2);
 }
 
 void SpikeScopeDialog::resetThresholdToZero()

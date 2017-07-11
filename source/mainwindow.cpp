@@ -2274,6 +2274,8 @@ void MainWindow::findConnectedAmplifiers()
         // Set sampling rate to highest value for maximum temporal resolution.
 //        changeSampleRate(sampleRateComboBox->count() - 1);
 
+        //2 data streams per port.
+        //Each data stream corresponds to a single chip with 16 channels.
         portIndexOld[0]  = 0;
         portIndexOld[1]  = 0;
         portIndexOld[2]  = 1;
@@ -2435,7 +2437,7 @@ void MainWindow::findConnectedAmplifiers()
             for (stream = 0; stream < MAX_NUM_DATA_STREAMS; ++stream) {
                 if (portIndex[stream] == port) {
                     if (chipId[stream] == CHIP_ID_RHS2116) {
-                        for (i = 0; i < 16; ++i) {
+                        for (i = 0; i < 16; ++i) {//16 channels per data stream
                             signalSources->signalPort[port].addAmplifierChannel(channel, i, stream);
                             signalSources->signalPort[port].channel[channel].commandStream = commandStream[stream];
                             channel++;

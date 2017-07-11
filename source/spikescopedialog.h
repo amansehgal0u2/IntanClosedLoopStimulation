@@ -81,6 +81,8 @@ private:
     QComboBox *yScaleComboBox;
 
     QSpinBox *thresholdSpinBox;
+    QSpinBox* vbtSpinBox1;
+    QSpinBox* vbtSpinBox2;
     MainWindow* mainWindow;
     SpikePlot *spikePlot;
 };
