@@ -108,6 +108,7 @@ SpikeScopeDialog::SpikeScopeDialog(SignalProcessor *inSignalProcessor, SignalSou
     vbtSpinBoxLayout->addLayout(vbtSpinBoxLayout1);
     vbtSpinBoxLayout->addLayout(vbtSpinBoxLayout2);
     //------------------------------------------------------------
+
     digitalInputComboBox = new QComboBox();
     digitalInputComboBox->addItem(tr("DIGITAL IN 1"));
     digitalInputComboBox->addItem(tr("DIGITAL IN 2"));

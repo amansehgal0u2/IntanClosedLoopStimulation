@@ -2731,6 +2731,7 @@ bool MainWindow::isRunning()
 // waveform data over USB port.
 void MainWindow::runInterfaceBoard()
 {
+    static bool refreshScreen = true;
     bool newDataReady = false;
     int triggerIndex;
     QTime timer;
@@ -3069,6 +3070,7 @@ void MainWindow::runInterfaceBoard()
                 // the spike detector hasn't been calibrated yet
                 if(!signalProcessor->spikeDetectorCalibrated)
                 {
+                    refreshScreen = true;
                     this->updateStatusBarText("Calibrating Spike Detector ...");
                     int retCode = signalProcessor->calibrateSpikeDetector(signalSources, boardSampleRate, numUsbBlocksToRead);
                     // check error code
@@ -3086,6 +3088,11 @@ void MainWindow::runInterfaceBoard()
                 }
                 else
                 {
+                    if(refreshScreen == true)
+                    {
+                        wavePlot->refreshScreen();
+                        refreshScreen = false;
+                    }
                     // run spike detector once calibration is done
                     this->updateStatusBarText("Running Spike Detector with Closed Loop Stim.");
                     signalProcessor->runSpikeDetector(channelVisible, numUsbBlocksToRead, boardSampleRate, this);
@@ -5075,6 +5082,10 @@ void MainWindow::loadStimSettings()
                                     if (channel->stimParameters->enabled && channel->stimParameters->triggerSourceDisplay == StimParameters::ClosedLoop)
                                     {
                                         this->ClosedLoopStimEnabled++;
+                                        this->signalProcessor->spikeDetectorCalibrated = false;
+                                        this->spikeBandFilterComboBox->setCurrentIndex(1); //enable the spike band filter
+                                        unsigned int trigger = this->signalProcessor->addSpikeDetectionChannel(channel->boardStream , channel->chipChannel);
+                                        channel->stimParameters->triggerSource = (StimParameters::TriggerSources)(trigger+StimParameters::KeyPress1);;
                                     }
                                 } else if (xml.name() == "triggerEdgeOrLevel") {
                                     channel->stimParameters->triggerEdgeOrLevel = (StimParameters::TriggerEdgeOrLevels)xml.readElementText().toInt();

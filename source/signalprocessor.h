@@ -83,6 +83,11 @@ public:
     void remManualTrigChannel(unsigned int trig);
     void remSpikeDetectionChannel(unsigned int boardStream, unsigned int chipChannel);
     bool closedLoopStimTriggersAvailable(int trigger = -1);
+    void updateChannelNumSigma(unsigned int channel, unsigned int stream, double numSigma = 100);
+    inline QList<channel_id_t>* getSpikedetectorChannelIdList()
+    {
+        return &this->spikeDetection_channelIdList;
+    }
     // QVector<QVector<QVector<double> > > amplifierPreFilter;
     double* amplifierPreFilterFast;
     bool spikeDetectorCalibrated;

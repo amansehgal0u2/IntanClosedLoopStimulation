@@ -931,7 +931,7 @@ void WavePlot::drawAxisLines(QPainter &painter, int frameNumber)
 void WavePlot::drawAxisText(QPainter &painter, int frameNumber)
 {
     const int textBoxWidth = 180;
-    const int textBoxHeight = painter.fontMetrics().height();
+    const int textBoxHeight = painter.fontMetrics().height()+15;
 
     QRect frame = frameList[numFramesIndex[selectedPort]][frameNumber];
 
@@ -1052,7 +1052,21 @@ void WavePlot::drawAxisText(QPainter &painter, int frameNumber)
             triggerName = "KEY 8";
             break;
         case StimParameters::ClosedLoop:
-            triggerName = "CL SD"; // closed loop stim with spike detect feedback
+        {
+            SignalChannel* channel = selectedChannel(frameNumber + topLeftFrame[selectedPort]);
+            triggerName = "CL SD\n"; // closed loop stim with spike detect feedback
+            triggerName+= QSTRING_SIGMA_SYMBOL+"=";
+            QList<channel_id_t>* spikeDetectChannelList= signalProcessor->getSpikedetectorChannelIdList();
+            for(int i=0; i < spikeDetectChannelList->size(); i++)
+            {
+                if (spikeDetectChannelList->at(i).stream_id == channel->boardStream &&
+                    spikeDetectChannelList->at(i).chip_channel_id == channel->chipChannel &&
+                    spikeDetectChannelList->at(i).calibrated == true )
+                {
+                    triggerName+=QString::number(spikeDetectChannelList->at(i).stddev);
+                }
+            }
+        }
             break;
         default:
             triggerName = "n/a";

@@ -615,9 +615,10 @@ void StimParamDialog::loadParameters(StimParameters *parameters)
 void StimParamDialog::accept()
 {
     bool enableClosedLoop = false;
+    // ------------closed loop stim trigger state machine -----------------
     // check if close loop stim needs to be disabled
     if (parameters->triggerSourceDisplay == StimParameters::ClosedLoop &&
-        (StimParameters::TriggerSources)triggerSource->currentIndex() != StimParameters::ClosedLoop &&
+       (StimParameters::TriggerSources)triggerSource->currentIndex() != StimParameters::ClosedLoop &&
         enableStim->isChecked() )
     {
         mainWindow->ClosedLoopStimEnabled--;
@@ -648,9 +649,10 @@ void StimParamDialog::accept()
         parameters->triggerSource = (StimParameters::TriggerSources)(trigger+StimParameters::KeyPress1);
         enableClosedLoop = true;
     }
-
+    // -----------manual trigger state machine -------------
+    // Manages manual keypress trigger sources
     // manage manual trigger setup - enable manual keypress trigger
-    else if ( (StimParameters::TriggerSources) triggerSource->currentIndex() >= StimParameters::KeyPress1 &&
+    if ( (StimParameters::TriggerSources) triggerSource->currentIndex() >= StimParameters::KeyPress1 &&
          (StimParameters::TriggerSources) triggerSource->currentIndex() <= StimParameters::KeyPress8 &&
          (StimParameters::TriggerSources) triggerSource->currentIndex() == parameters->triggerSourceDisplay &&
           enableStim->isChecked() && !parameters->enabled
@@ -659,20 +661,19 @@ void StimParamDialog::accept()
         mainWindow->getSignalProcessorObj()->addManualTrigChannel(triggerSource->currentIndex() - StimParameters::KeyPress1);
     }
     //disable manual keypress trigger
-    else if( (StimParameters::TriggerSources) triggerSource->currentIndex() >= StimParameters::KeyPress1 &&
-             (StimParameters::TriggerSources) triggerSource->currentIndex() <= StimParameters::KeyPress8 &&
-             (StimParameters::TriggerSources) triggerSource->currentIndex() == parameters->triggerSourceDisplay &&
-              !enableStim->isChecked() && parameters->enabled
+    else if( parameters->triggerSourceDisplay >= StimParameters::KeyPress1 &&
+             parameters->triggerSourceDisplay <= StimParameters::KeyPress8 &&
+             !enableStim->isChecked() && parameters->enabled
            )
     {
-        mainWindow->getSignalProcessorObj()->remManualTrigChannel(triggerSource->currentIndex() - StimParameters::KeyPress1);
+        mainWindow->getSignalProcessorObj()->remManualTrigChannel(parameters->triggerSourceDisplay - StimParameters::KeyPress1);
     }
     // switching to a different manual trigger source keypress
     else if ( (StimParameters::TriggerSources) triggerSource->currentIndex() >= StimParameters::KeyPress1 &&
-         (StimParameters::TriggerSources) triggerSource->currentIndex() <= StimParameters::KeyPress8 &&
-          parameters->triggerSourceDisplay >= StimParameters::KeyPress1 && parameters->triggerSourceDisplay <= StimParameters::KeyPress8 &&
-          (StimParameters::TriggerSources) triggerSource->currentIndex() != parameters->triggerSourceDisplay &&
-          enableStim->isChecked()
+              (StimParameters::TriggerSources) triggerSource->currentIndex() <= StimParameters::KeyPress8 &&
+              parameters->triggerSourceDisplay >= StimParameters::KeyPress1 && parameters->triggerSourceDisplay <= StimParameters::KeyPress8 &&
+              (StimParameters::TriggerSources) triggerSource->currentIndex() != parameters->triggerSourceDisplay &&
+              enableStim->isChecked()
        )
     {
         // add a new trigger
@@ -682,10 +683,10 @@ void StimParamDialog::accept()
     }
     // selected a manual trigger but was not a manual trigger previously
     else if ( (StimParameters::TriggerSources) triggerSource->currentIndex() >= StimParameters::KeyPress1 &&
-         (StimParameters::TriggerSources) triggerSource->currentIndex() <= StimParameters::KeyPress8 &&
-         (parameters->triggerSourceDisplay < StimParameters::KeyPress1 || parameters->triggerSourceDisplay > StimParameters::KeyPress8) &&
-          (StimParameters::TriggerSources) triggerSource->currentIndex() != parameters->triggerSourceDisplay &&
-          enableStim->isChecked()
+              (StimParameters::TriggerSources) triggerSource->currentIndex() <= StimParameters::KeyPress8 &&
+              (parameters->triggerSourceDisplay < StimParameters::KeyPress1 || parameters->triggerSourceDisplay > StimParameters::KeyPress8) &&
+              (StimParameters::TriggerSources) triggerSource->currentIndex() != parameters->triggerSourceDisplay &&
+              enableStim->isChecked()
        )
     {
          mainWindow->getSignalProcessorObj()->addManualTrigChannel(triggerSource->currentIndex() - StimParameters::KeyPress1);
@@ -698,7 +699,7 @@ void StimParamDialog::accept()
           enableStim->isChecked()
        )
     {
-         mainWindow->getSignalProcessorObj()->remManualTrigChannel(triggerSource->currentIndex() - StimParameters::KeyPress1);
+         mainWindow->getSignalProcessorObj()->remManualTrigChannel(parameters->triggerSourceDisplay - StimParameters::KeyPress1);
     }
     //save the values of the parameters from the dialog box into the object
     parameters->stimShape = (StimParameters::StimShapeValues) stimShape->currentIndex();
@@ -729,7 +730,9 @@ void StimParamDialog::accept()
 
     parameters->spikeDetectCalibWindow = calibWindow->currentText().toInt();
     parameters->spikeDetectionThr = thrSpikeDetectorLineEdit->text().toDouble();
-
+    this->mainWindow->getSignalProcessorObj()->updateChannelNumSigma(this->selectedChannel->chipChannel,
+                                                                     this->selectedChannel->boardStream,
+                                                                     parameters->spikeDetectionThr);
     //close the window
     done(Accepted);
 }

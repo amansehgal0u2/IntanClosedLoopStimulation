@@ -81,6 +81,7 @@ SignalProcessor::SignalProcessor()
     amplifierPreFilterFast = nullptr;
     availableStimTriggers.resize(StimParameters::KeyPress8 - StimParameters::KeyPress1 + 1);
     availableStimTriggers.fill(0);// all triggers available on program start
+    spikeDetectorCalib_heapList.clear();
 }
 
 SignalProcessor::~SignalProcessor()
@@ -2213,6 +2214,19 @@ bool SignalProcessor::closedLoopStimTriggersAvailable(int trigger)
 
 }
 
+void SignalProcessor::updateChannelNumSigma(unsigned int channel, unsigned int stream, double numSigma)
+{
+    for (int i=0;i< this->spikeDetection_channelIdList.size(); i++)
+    {
+        if(spikeDetection_channelIdList[i].chip_channel_id == channel && spikeDetection_channelIdList[i].stream_id == stream)
+        {
+            spikeDetection_channelIdList[i].numSigma = numSigma;
+        }
+    }
+}
+
+
+
 // remove the channel from this list if the spike detection is disabled on this channel
 void SignalProcessor::remSpikeDetectionChannel(unsigned int boardStream, unsigned int chipChannel)
 {
@@ -2261,21 +2275,28 @@ int SignalProcessor::calibrateSpikeDetector(SignalSources *signalSources, double
         for (unsigned int i = 0; i < numChannels; i++)
         {
             channel_id_t channel =  spikeDetection_channelIdList.at(i);
-
-            // obtain the current channel's object
-            SignalChannel *channelObj =signalSources->findAmplifierChannel(channel.stream_id, channel.chip_channel_id);
-            // number of stddev from the stddev of the noise estimate to look for spikes
-            spikeDetection_channelIdList[i].numSigma = channelObj->stimParameters->spikeDetectionThr;
-            // num of samples to be used for noise floor calibration
-            unsigned int numSamples = (unsigned int) (boardSampleRate * channelObj->stimParameters->spikeDetectCalibWindow);
-            double* temp = new double[numSamples];
-            // null pointer was returned
-            if (temp == nullptr)
+            if(channel.calibrated == false)
             {
-               return EXIT_NULLPTR_EXCEPTION;
+                // obtain the current channel's object
+                SignalChannel *channelObj =signalSources->findAmplifierChannel(channel.stream_id, channel.chip_channel_id);
+                // number of stddev from the stddev of the noise estimate to look for spikes
+                spikeDetection_channelIdList[i].numSigma = channelObj->stimParameters->spikeDetectionThr;
+                // num of samples to be used for noise floor calibration
+                unsigned int numSamples = (unsigned int) (boardSampleRate * channelObj->stimParameters->spikeDetectCalibWindow);
+                double* temp = new double[numSamples];
+                // null pointer was returned
+                if (temp == nullptr)
+                {
+                   return EXIT_NULLPTR_EXCEPTION;
+                }
+                spikeDetectorCalib_heapList.append(temp);
+                numSamples_channel[i]= numSamples;
             }
-            spikeDetectorCalib_heapList.append(temp);
-            numSamples_channel[i]= numSamples;
+            else
+            {
+                spikeDetectorCalib_heapList.append(nullptr);
+                numSamples_channel[i]= 0;
+            }
          }
     }
     // ---------begin calibration---------
@@ -2307,7 +2328,7 @@ int SignalProcessor::calibrateSpikeDetector(SignalSources *signalSources, double
                 }
             }
             // all samples for this channel have been accumulated so mark it as done.
-            else
+            else if (notDone > 0)
             {                
                 notDone--;
             }
@@ -2333,8 +2354,8 @@ int SignalProcessor::calibrateSpikeDetector(SignalSources *signalSources, double
                 double median = numSamples_channel[i] % 2 ? // check if the number of elements is even: returns 1 if odd
                                 spikeDetectorCalib_heapList[i][numSamples_channel[i] / 2] : // odd number of elements
                                 (spikeDetectorCalib_heapList[i][numSamples_channel[i] / 2 - 1] + spikeDetectorCalib_heapList[i][numSamples_channel[i] / 2]) / (double)2.0; // even number of elements
-
-                spikeDetection_channelIdList[i].stddev =  median; // add the median to the list for real-time stim signals
+                cout<<"median="<<median<<endl;
+                spikeDetection_channelIdList[i].stddev =  median; // add the median to the list for real-time spike detection channels
                 spikeDetection_channelIdList[i].calibrated = true; // this channel has been calibrated
             }
         }
@@ -2356,7 +2377,9 @@ int SignalProcessor::calibrateSpikeDetector(SignalSources *signalSources, double
 
 void SignalProcessor::runSpikeDetector(const QVector<QVector<bool> > &channelVisible, unsigned int numBlocks, double boardSampleRate, MainWindow* mainWindow)
 {
-    unsigned int length = SAMPLES_PER_DATA_BLOCK * numBlocks;;
+    static QVector<unsigned int> trigNotReady(spikeDetection_channelIdList.size(),0);// soft refractory period tracker
+    unsigned int length = SAMPLES_PER_DATA_BLOCK * numBlocks;
+
     // detect spikes on all the channels
     for (unsigned int i = 0; i < spikeDetection_channelIdList.size(); i++)
     {
@@ -2366,18 +2389,26 @@ void SignalProcessor::runSpikeDetector(const QVector<QVector<bool> > &channelVis
         {
             double threshold = channel.stddev*channel.numSigma;
             // run through the channels to detect spikes
-            for (unsigned int t = 0; t < length; t++)
+            for (unsigned int t = 1; t < length; t++)
             {
-                bool PosTrigEvent = (bool)(amplifierPostFilter.at(channel.stream_id).at(channel.chip_channel_id).at(t) > threshold);
-                bool NegTrigEvent = (bool)(amplifierPostFilter.at(channel.stream_id).at(channel.chip_channel_id).at(t) < -threshold);
-                if (PosTrigEvent || NegTrigEvent)
+                // trigger event is threshold cross over point.
+                bool PosTrigEvent = (bool)(amplifierPostFilter.at(channel.stream_id).at(channel.chip_channel_id).at(t-1) < threshold &&
+                                           amplifierPostFilter.at(channel.stream_id).at(channel.chip_channel_id).at(t) > threshold);
+
+                bool NegTrigEvent = (bool)(amplifierPostFilter.at(channel.stream_id).at(channel.chip_channel_id).at(t-1) > -threshold &&
+                                           amplifierPostFilter.at(channel.stream_id).at(channel.chip_channel_id).at(t) < -threshold);
+                if ((PosTrigEvent || NegTrigEvent) && !trigNotReady[i])
                 {
                     //generate trigger event for the Intan system to trigger a stim signal
                     mainWindow->setManualStimTrigger(channel.trigger, true);
                     mainWindow->setManualStimTrigger(channel.trigger, false);
                     // skip 2ms of data. Dont want to keep stimulating if we detect a spike
                     // since, ideally, only one stim pulse per spike would be ideal
-                    t+= (unsigned int)((boardSampleRate/1000.0)*2);
+                    trigNotReady[i] = (unsigned int)((boardSampleRate/1000.0)*2);
+                }
+                else if(trigNotReady[i] > 0)
+                {
+                    trigNotReady[i]--;
                 }
             }
         }

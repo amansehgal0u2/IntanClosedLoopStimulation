@@ -34,6 +34,7 @@ const double RADIANS_TO_DEGREES = 57.2957795132;
 #define QSTRING_ANGLE_SYMBOL  ((QString)((QChar)0x2220))
 #define QSTRING_DEGREE_SYMBOL  ((QString)((QChar)0x00b0))
 #define QSTRING_PLUSMINUS_SYMBOL  ((QString)((QChar)0x00b1))
+#define QSTRING_SIGMA_SYMBOL  ((QString)((QChar)0x03c3))
 
 // Saved data file constants
 #define DATA_FILE_MAGIC_NUMBER  0xd69127ac
