@@ -2175,13 +2175,16 @@ void SignalProcessor::amplitudeOfFreqComponent(double &realComponent, double &im
     realComponent = 2.0 * meanI;
     imagComponent = 2.0 * meanQ;
 }
-
+// if a manual key press trigger is going to be used for stim
+// record it so that we dont map that to the a closed loop trigger.
 void SignalProcessor::addManualTrigChannel(unsigned int trig)
 {
     if (trig < availableStimTriggers.size())
         availableStimTriggers[trig]++;
 }
-
+// if a keypress manual trigger is going to be removed from a channel
+// keep track of that as well in case it frees up (not used on any channel at all)
+// and we want to be able to use it for closed loop stim.
 void SignalProcessor::remManualTrigChannel(unsigned int trig)
 {
     if (trig < availableStimTriggers.size())
@@ -2195,12 +2198,24 @@ unsigned int SignalProcessor::addSpikeDetectionChannel(unsigned int boardStream,
     unsigned int trig = this->availableStimTriggers.indexOf(0);
     availableStimTriggers[trig]=-1; // -1 for closed loop stim trigger
     channel_id_t temp = {.stream_id = boardStream, .chip_channel_id = chipChannel, .trigger = trig, .calibrated = false , .numSigma = 0.0 , .stddev = 0.0};
-    this->spikeDetection_channelIdList.append(temp);
+    spikeDetection_channelIdList.append(temp);
     return trig;
 }
+
+// reset the spike detector
+void SignalProcessor::resetSpikeDetector()
+{
+    spikeDetectorCalibrated = false;
+    spikeDetection_channelIdList.clear();
+    availableStimTriggers.fill(0);
+}
+
 // returns true if a manual stim trigger is available.
 // No argument - returns true if a slot is available for closed loop stim.
 // non-negative argument -  returns true if it is available for use as a manual trigger
+// NOTE: 1) to check for manual key-press triggers pass in the trigger as zero based index
+//       2) to check for closed loop stim, dont pass any arguments which will cause the function
+//          to use the default argument of -1
 bool SignalProcessor::closedLoopStimTriggersAvailable(int trigger)
 {
     // indexOf returns a -1 when the index is not found so add 1 to shift it up to a 0
@@ -2211,7 +2226,6 @@ bool SignalProcessor::closedLoopStimTriggersAvailable(int trigger)
         return (bool)(availableStimTriggers[trigger]+1);
     else
         return false;
-
 }
 
 void SignalProcessor::updateChannelNumSigma(unsigned int channel, unsigned int stream, double numSigma)
@@ -2380,6 +2394,10 @@ void SignalProcessor::runSpikeDetector(const QVector<QVector<bool> > &channelVis
     static QVector<unsigned int> trigNotReady(spikeDetection_channelIdList.size(),0);// soft refractory period tracker
     unsigned int length = SAMPLES_PER_DATA_BLOCK * numBlocks;
 
+    if (trigNotReady.size() != spikeDetection_channelIdList.size()) // new closed loop stim channels were added
+    {
+        trigNotReady = QVector<unsigned int> (spikeDetection_channelIdList.size(),0); //re-initialize the vector
+    }
     // detect spikes on all the channels
     for (unsigned int i = 0; i < spikeDetection_channelIdList.size(); i++)
     {

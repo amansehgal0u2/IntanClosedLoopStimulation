@@ -82,6 +82,7 @@ public:
     void addManualTrigChannel(unsigned int trig);
     void remManualTrigChannel(unsigned int trig);
     void remSpikeDetectionChannel(unsigned int boardStream, unsigned int chipChannel);
+    void resetSpikeDetector();
     bool closedLoopStimTriggersAvailable(int trigger = -1);
     void updateChannelNumSigma(unsigned int channel, unsigned int stream, double numSigma = 100);
     inline QList<channel_id_t>* getSpikedetectorChannelIdList()

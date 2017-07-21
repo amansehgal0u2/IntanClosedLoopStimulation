@@ -614,7 +614,8 @@ void StimParamDialog::loadParameters(StimParameters *parameters)
 /* Public slot that saves the values from the dialog box widgets into the parameters object, and closes the window */
 void StimParamDialog::accept()
 {
-    bool enableClosedLoop = false;
+    bool enableClosedLoop = (bool)((StimParameters::TriggerSources)triggerSource->currentIndex() == StimParameters::ClosedLoop);
+
     // ------------closed loop stim trigger state machine -----------------
     // check if close loop stim needs to be disabled
     if (parameters->triggerSourceDisplay == StimParameters::ClosedLoop &&

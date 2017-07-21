@@ -432,18 +432,32 @@ void SpikePlot::resetVoltageThresholdLine()
     update();
 }
 
-// If user clicks inside display, set voltage threshold to that level.
+// If user clicks inside display,
+// set voltage threshold to that level if trigger type is voltage threshold
 void SpikePlot::mousePressEvent(QMouseEvent *event)
 {
-    if (event->button() == Qt::LeftButton) {
-        if (frame.contains(event->pos())) {
+    if (event->button() == Qt::LeftButton &&
+        spikeScopeDialog->triggerTypeComboBox->currentIndex()==0)
+    {
+        if (frame.contains(event->pos()))
+        {
             int yMouse = event->pos().y();
             double newThreshold = yScale * (frame.center().y() - yMouse) / (frame.height() / 2);
             setVoltageThreshold(newThreshold);
             spikeScopeDialog->setVoltageThresholdDisplay(newThreshold);
             updateSpikePlot(0.0);
         }
-    } else {
+    }
+    else if ()
+    {
+
+    }
+    else if ()
+    {
+
+    }
+    else
+    {
         QWidget::mousePressEvent(event);
     }
 }

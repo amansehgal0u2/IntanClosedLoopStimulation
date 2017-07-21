@@ -1063,7 +1063,7 @@ void WavePlot::drawAxisText(QPainter &painter, int frameNumber)
                     spikeDetectChannelList->at(i).chip_channel_id == channel->chipChannel &&
                     spikeDetectChannelList->at(i).calibrated == true )
                 {
-                    triggerName+=QString::number(spikeDetectChannelList->at(i).stddev);
+                    triggerName+=QString::number(spikeDetectChannelList->at(i).stddev,'f',4);
                 }
             }
         }
@@ -1076,7 +1076,7 @@ void WavePlot::drawAxisText(QPainter &painter, int frameNumber)
         painter.setPen(stimTextColor);
         if (frameNumColumns[numFramesIndex[selectedPort]] == 1) {
             painter.drawText(rect().left() + 3, frame.top() - 1, textBoxWidth, textBoxHeight,
-                             Qt::AlignLeft | Qt::AlignBottom, triggerName);
+                             Qt::AlignLeft | Qt::AlignTop, triggerName);
         } else {
             painter.drawText(frame.center().x() - textBoxWidth / 2, frame.top() - textBoxHeight - 1,
                              textBoxWidth, textBoxHeight, Qt::AlignHCenter | Qt::AlignBottom, triggerName);

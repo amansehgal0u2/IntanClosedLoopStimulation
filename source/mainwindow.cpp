@@ -5054,7 +5054,10 @@ void MainWindow::loadStimSettings()
     QXmlStreamReader xml(&stimSettingsFile);
 
     signalSources->disableAllStim();    // disable any stimulation protocols first
-
+    // reset spike detector
+    signalProcessor->resetSpikeDetector();
+    // reset closed loop stim state
+    this->ClosedLoopStimEnabled = 0;
     // Load settings
     if (xml.readNextStartElement()) {
         if (xml.name() == "xstim" && xml.attributes().value("version") == "1.0") {
@@ -5085,7 +5088,13 @@ void MainWindow::loadStimSettings()
                                         this->signalProcessor->spikeDetectorCalibrated = false;
                                         this->spikeBandFilterComboBox->setCurrentIndex(1); //enable the spike band filter
                                         unsigned int trigger = this->signalProcessor->addSpikeDetectionChannel(channel->boardStream , channel->chipChannel);
-                                        channel->stimParameters->triggerSource = (StimParameters::TriggerSources)(trigger+StimParameters::KeyPress1);;
+                                        channel->stimParameters->triggerSource = (StimParameters::TriggerSources)(trigger+StimParameters::KeyPress1);
+                                    }
+                                    else if(channel->stimParameters->enabled &&
+                                            channel->stimParameters->triggerSourceDisplay >= StimParameters::KeyPress1 &&
+                                            channel->stimParameters->triggerSourceDisplay <= StimParameters::KeyPress8)
+                                    {
+                                        signalProcessor->addManualTrigChannel(channel->stimParameters->triggerSourceDisplay - StimParameters::KeyPress1);
                                     }
                                 } else if (xml.name() == "triggerEdgeOrLevel") {
                                     channel->stimParameters->triggerEdgeOrLevel = (StimParameters::TriggerEdgeOrLevels)xml.readElementText().toInt();
