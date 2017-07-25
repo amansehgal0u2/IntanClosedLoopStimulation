@@ -180,7 +180,10 @@ private:
                                   int startIndex, int endIndex,
                                   double sampleRate, double frequency);
 
-    inline int fastIndex(int stream, int channel, int t) const;
+    inline int fastIndex(int stream, int channel, int t) const
+    {
+        return ((t * numDataStreams * CHANNELS_PER_STREAM) + (channel * numDataStreams) + stream);
+    }
 
     RandomNumber *random;
     FIRFilter *spikeBandFIRfilter;

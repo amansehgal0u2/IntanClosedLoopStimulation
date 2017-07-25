@@ -91,10 +91,6 @@ SignalProcessor::~SignalProcessor()
     delete spikeBandFIRfilter;
 }
 
-inline int SignalProcessor::fastIndex(int stream, int channel, int t) const
-{
-    return ((t * numDataStreams * CHANNELS_PER_STREAM) + (channel * numDataStreams) + stream);
-}
 
 // Allocate memory to store waveform data.
 void SignalProcessor::allocateMemory(int numStreams)

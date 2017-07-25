@@ -45,12 +45,15 @@ public:
     void setMaxNumSpikeWaveforms(int num);
     void clearScope();
     void setVoltageTriggerMode(bool voltageMode);
+    void setVoltageTimeDiscriminatorMode(bool mode);
     void setVoltageThreshold(int threshold);
+    void setV1Band(int threshold);
+    void setV2Band(int threshold);
     void setDigitalTriggerChannel(int channel);
     void setDigitalEdgePolarity(bool risingEdge);
     void setNewChannel(SignalChannel* newChannel);
     void resetVoltageThresholdLine();
-
+    void resetVoltageTimeDiscriminatorCursors();
     QSize minimumSizeHint() const;
     QSize sizeHint() const;
 
@@ -82,7 +85,10 @@ private:
     int numSpikeWaveforms;
     int maxNumSpikeWaveforms;
     bool voltageTriggerMode;
+    bool voltageTimeDiscriminatorMode;
     int voltageThreshold;
+    int V1BandLimit;
+    int V2BandLimit;
     int digitalTriggerChannel;
     bool digitalEdgePolarity;
 

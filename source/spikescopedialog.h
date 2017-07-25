@@ -56,10 +56,13 @@ private slots:
     void changeYScale(int index);
     void setTriggerType(int index);
     void resetThresholdToZero();
+    void resetVBTtoZero();
     void setNumSpikes(int index);
     void clearScope();
     void setDigitalInput(int index);
     void setVoltageThreshold(int value);
+    void setV1Band(int value);
+    void setV2Band(int value);
     void setEdgePolarity(int index);
     void applyToAll();
 
@@ -73,6 +76,7 @@ private:
     QPushButton *resetToZeroButton;
     QPushButton *clearScopeButton;
     QPushButton *applyToAllButton;
+    QPushButton *resetVBTButton;
 
     QComboBox *triggerTypeComboBox;
     QComboBox *numSpikesComboBox;

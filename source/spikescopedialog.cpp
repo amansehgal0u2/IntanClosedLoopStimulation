@@ -84,8 +84,11 @@ SpikeScopeDialog::SpikeScopeDialog(SignalProcessor *inSignalProcessor, SignalSou
     thresholdSpinBoxLayout->addWidget(new QLabel(QSTRING_MU_SYMBOL + "V"));
     // thresholdSpinBoxLayout->addStretch(1);
     //------------------------------------------------------------
-
     // voltage band-time (vbt) discriminator layout components
+    resetVBTButton = new QPushButton(tr("reset"));
+    connect(resetToZeroButton, SIGNAL(clicked()),
+            this, SLOT(resetVBTtoZero()));
+
     vbtSpinBox1 = new QSpinBox();
     vbtSpinBox1->setRange(-5000, 5000);
     vbtSpinBox1->setSingleStep(5);
@@ -95,6 +98,11 @@ SpikeScopeDialog::SpikeScopeDialog(SignalProcessor *inSignalProcessor, SignalSou
     vbtSpinBox2->setRange(-5000, 5000);
     vbtSpinBox2->setSingleStep(5);
     vbtSpinBox2->setValue(0);
+
+    connect(vbtSpinBox1, SIGNAL(valueChanged(int)),
+            this, SLOT(setV1Band(int)));
+    connect(vbtSpinBox2, SIGNAL(valueChanged(int)),
+            this, SLOT(setV2Band(int)));
 
     QHBoxLayout *vbtSpinBoxLayout1 = new QHBoxLayout;
     vbtSpinBoxLayout1->addWidget(vbtSpinBox1);
@@ -107,6 +115,7 @@ SpikeScopeDialog::SpikeScopeDialog(SignalProcessor *inSignalProcessor, SignalSou
     QVBoxLayout *vbtSpinBoxLayout = new QVBoxLayout;
     vbtSpinBoxLayout->addLayout(vbtSpinBoxLayout1);
     vbtSpinBoxLayout->addLayout(vbtSpinBoxLayout2);
+    vbtSpinBoxLayout->addWidget(resetVBTButton);
     //------------------------------------------------------------
 
     digitalInputComboBox = new QComboBox();
@@ -239,6 +248,15 @@ void SpikeScopeDialog::setTriggerType(int index)
     spikePlot->setVoltageTriggerMode(index == 0);
     vbtSpinBox1->setEnabled(index==2);
     vbtSpinBox2->setEnabled(index==2);
+    spikePlot->setVoltageTimeDiscriminatorMode(index == 2);
+}
+
+void SpikeScopeDialog::resetVBTtoZero()
+{
+    vbtSpinBox1->setValue(0);
+    vbtSpinBox2->setValue(0);
+    if(!mainWindow->isRunning())
+        spikePlot->resetVoltageTimeDiscriminatorCursors();
 }
 
 void SpikeScopeDialog::resetThresholdToZero()
@@ -275,6 +293,16 @@ void SpikeScopeDialog::clearScope()
 void SpikeScopeDialog::setDigitalInput(int index)
 {
     spikePlot->setDigitalTriggerChannel(index);
+}
+
+void SpikeScopeDialog::setV1Band(int value)
+{
+    spikePlot->setV1Band(value);
+}
+
+void SpikeScopeDialog::setV2Band(int value)
+{
+    spikePlot->setV2Band(value);
 }
 
 void SpikeScopeDialog::setVoltageThreshold(int value)

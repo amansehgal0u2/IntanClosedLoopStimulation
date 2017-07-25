@@ -366,10 +366,18 @@ void SpikePlot::updateSpikePlot(double rms)
     }
 
     // If using a voltage threshold trigger, plot a line at the threshold level.
-    if (voltageTriggerMode) {
+    if (voltageTriggerMode)
+    {
         painter.setPen(Qt::red);
         painter.drawLine(xOffset, yScaleFactor * voltageThreshold + yOffset,
                           xScaleFactor * (totalTSteps - 1) +  xOffset, yScaleFactor * voltageThreshold + yOffset);
+    }
+    // If using the voltage time discrimintator plot two cursors to allow the user to
+    // adjust the votlage bands and time separation between them
+    else if(this->voltageTimeDiscriminatorMode)
+    {
+        painter.setPen(Qt::red);
+
     }
 
     painter.setClipping(false);
@@ -397,39 +405,17 @@ void SpikePlot::updateSpikePlot(double rms)
     update();
 }
 
+void SpikePlot::resetVoltageTimeDiscriminatorCursors()
+{
+    this->updateSpikePlot(0.0);
+}
+
 // update the threshold line when 0 button is clicked
 // This function is currently only needed to support
 // the spike plot when not running.
 void SpikePlot::resetVoltageThresholdLine()
 {
-    double xScaleFactor, yScaleFactor;
-    const double tScale = 3.0;
-    int xOffset, yOffset;
-    double yAxisLength, tAxisLength;
-
-
-    drawAxisLines();
-
-    QPainter painter(&pixmap);
-    painter.initFrom(this);
-
-    QRect adjustedFrame = frame;
-    adjustedFrame.adjust(0, 1, 0, 0);
-    painter.setClipRect(adjustedFrame);
-
-    xOffset = frame.left() + 1;
-    yOffset = frame.center().y();
-
-    yAxisLength = (frame.height() - 2) / 2.0;
-    tAxisLength = frame.width() - 1;
-
-    xScaleFactor = tAxisLength * tStepMsec / tScale;
-    yScaleFactor = -yAxisLength / yScale;
-
-    painter.setPen(Qt::red);
-    painter.drawLine(xOffset, yScaleFactor * 0.0 + yOffset,
-                      xScaleFactor * (totalTSteps - 1) +  xOffset, yScaleFactor * 0.0 + yOffset);
-    update();
+    this->updateSpikePlot(0.0);
 }
 
 // If user clicks inside display,
@@ -437,7 +423,7 @@ void SpikePlot::resetVoltageThresholdLine()
 void SpikePlot::mousePressEvent(QMouseEvent *event)
 {
     if (event->button() == Qt::LeftButton &&
-        spikeScopeDialog->triggerTypeComboBox->currentIndex()==0)
+        this->voltageTriggerMode)
     {
         if (frame.contains(event->pos()))
         {
@@ -448,17 +434,19 @@ void SpikePlot::mousePressEvent(QMouseEvent *event)
             updateSpikePlot(0.0);
         }
     }
-    else if ()
+    else if (event->button() == Qt::LeftButton &&
+             this->voltageTimeDiscriminatorMode)
     {
 
     }
-    else if ()
+    else if (event->button() == Qt::RightButton &&
+             this->voltageTimeDiscriminatorMode)
     {
 
     }
     else
     {
-        QWidget::mousePressEvent(event);
+
     }
 }
 
@@ -525,6 +513,11 @@ void SpikePlot::clearScope()
     numSpikeWaveforms = 0;
     drawAxisLines();
 }
+void SpikePlot::setVoltageTimeDiscriminatorMode(bool mode)
+{
+    this->voltageTimeDiscriminatorMode = mode;
+     updateSpikePlot(0.0);
+}
 
 // Select voltage threshold trigger mode if voltageMode == true, otherwise
 // select digital input trigger mode.
@@ -535,6 +528,20 @@ void SpikePlot::setVoltageTriggerMode(bool voltageMode)
         selectedChannel->voltageTriggerMode = voltageMode;
     }
     updateSpikePlot(0.0);
+}
+
+// set the voltage band for the first band of
+// the voltage time discrimnator
+void SpikePlot::setV1Band(int threshold)
+{
+    V1BandLimit = threshold;
+}
+
+// set the voltage band for the second band
+// of the voltage time discriminator
+void SpikePlot::setV2Band(int threshold)
+{
+    V2BandLimit = threshold;
 }
 
 // Set voltage threshold trigger level.  We use integer threshold
