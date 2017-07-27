@@ -47,8 +47,8 @@ public:
     void setVoltageTriggerMode(bool voltageMode);
     void setVoltageTimeDiscriminatorMode(bool mode);
     void setVoltageThreshold(int threshold);
-    void setV1Band(int threshold);
-    void setV2Band(int threshold);
+    void setV1Band(int bandLim);
+    void setV2Band(int bandLim);
     void setDigitalTriggerChannel(int channel);
     void setDigitalEdgePolarity(bool risingEdge);
     void setNewChannel(SignalChannel* newChannel);
@@ -89,6 +89,8 @@ private:
     int voltageThreshold;
     int V1BandLimit;
     int V2BandLimit;
+    int V1ThreshPoint;
+    int V2ThreshPoint;
     int digitalTriggerChannel;
     bool digitalEdgePolarity;
 
@@ -103,6 +105,8 @@ private:
 
     double tStepMsec;
     int yScale;
+    double xCursor1Pos;
+    double xCursor2Pos;
     double savedRms;
 
     QPixmap pixmap;

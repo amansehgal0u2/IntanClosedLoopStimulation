@@ -44,7 +44,7 @@ SpikeScopeDialog::SpikeScopeDialog(SignalProcessor *inSignalProcessor, SignalSou
 
     signalProcessor = inSignalProcessor;
     signalSources = inSignalSources;
-    mainWindow = static_cast<MainWindow*>(parent);
+    mainWindow = static_cast<MainWindow*>(parent);// upcast
     spikePlot = new SpikePlot(signalProcessor, initialChannel, this, this);
     currentChannel = initialChannel;
 
@@ -86,16 +86,16 @@ SpikeScopeDialog::SpikeScopeDialog(SignalProcessor *inSignalProcessor, SignalSou
     //------------------------------------------------------------
     // voltage band-time (vbt) discriminator layout components
     resetVBTButton = new QPushButton(tr("reset"));
-    connect(resetToZeroButton, SIGNAL(clicked()),
+    connect(resetVBTButton, SIGNAL(clicked()),
             this, SLOT(resetVBTtoZero()));
 
     vbtSpinBox1 = new QSpinBox();
-    vbtSpinBox1->setRange(-5000, 5000);
+    vbtSpinBox1->setRange(0, 5000);
     vbtSpinBox1->setSingleStep(5);
     vbtSpinBox1->setValue(0);
 
     vbtSpinBox2 = new QSpinBox();
-    vbtSpinBox2->setRange(-5000, 5000);
+    vbtSpinBox2->setRange(0, 5000);
     vbtSpinBox2->setSingleStep(5);
     vbtSpinBox2->setValue(0);
 
@@ -220,6 +220,11 @@ SpikeScopeDialog::SpikeScopeDialog(SignalProcessor *inSignalProcessor, SignalSou
     setEdgePolarity(edgePolarityComboBox->currentIndex());
 }
 
+MainWindow* SpikeScopeDialog::getMainWindowObj()
+{
+    return mainWindow;
+}
+
 void SpikeScopeDialog::changeYScale(int index)
 {
     spikePlot->setYScale(yScaleList[index]);
@@ -248,15 +253,15 @@ void SpikeScopeDialog::setTriggerType(int index)
     spikePlot->setVoltageTriggerMode(index == 0);
     vbtSpinBox1->setEnabled(index==2);
     vbtSpinBox2->setEnabled(index==2);
+    resetVBTButton->setEnabled(index==2);
     spikePlot->setVoltageTimeDiscriminatorMode(index == 2);
 }
 
 void SpikeScopeDialog::resetVBTtoZero()
 {
     vbtSpinBox1->setValue(0);
-    vbtSpinBox2->setValue(0);
-    if(!mainWindow->isRunning())
-        spikePlot->resetVoltageTimeDiscriminatorCursors();
+    vbtSpinBox2->setValue(0);    
+    spikePlot->resetVoltageTimeDiscriminatorCursors();
 }
 
 void SpikeScopeDialog::resetThresholdToZero()

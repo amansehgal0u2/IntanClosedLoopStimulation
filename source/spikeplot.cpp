@@ -58,6 +58,10 @@ SpikePlot::SpikePlot(SignalProcessor *inSignalProcessor, SignalChannel *initialC
     digitalTriggerChannel = 0;
     digitalEdgePolarity = true;
 
+    V1BandLimit = 0; // micro-volts
+    V2BandLimit = 0; // micro-volts
+    V1ThreshPoint = 0; //micro-volts
+    V2ThreshPoint = 0; // micro-volts
     setBackgroundRole(QPalette::Window);
     setAutoFillBackground(true);
     setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Preferred);
@@ -105,7 +109,8 @@ SpikePlot::SpikePlot(SignalProcessor *inSignalProcessor, SignalChannel *initialC
     // Default values that may be overwritten.
     yScale = 5000;
     setSampleRate(30000.0);
-
+    xCursor1Pos = 0;
+    xCursor2Pos=0;
     pixmap = QPixmap(size());
     pixmap.fill();
 }
@@ -125,6 +130,9 @@ void SpikePlot::setSampleRate(double newSampleRate)
 
     // Calculate number of time steps in 3 msec sample.
     totalTSteps = qCeil(3.0 / tStepMsec) + 1;
+
+    xCursor1Pos = totalTSteps/4;
+    xCursor2Pos = totalTSteps*3/4;
 
     // Calculate number of time steps in the 1 msec pre-trigger
     // display interval.
@@ -355,9 +363,11 @@ void SpikePlot::updateSpikePlot(double rms)
     yOffset = frame.center().y();
 
     index = maxNumSpikeWaveforms - numSpikeWaveforms;
-    for (j = spikeWaveformIndex - numSpikeWaveforms; j < spikeWaveformIndex; ++j) {
+    for (j = spikeWaveformIndex - numSpikeWaveforms; j < spikeWaveformIndex; ++j)
+    {
         // Build waveform
-        for (i = 0; i < totalTSteps; ++i) {
+        for (i = 0; i < totalTSteps; ++i)
+        {
             polyline[i] = QPointF(xScaleFactor * i + xOffset, yScaleFactor * spikeWaveform.at((j + 30) % spikeWaveform.size()).at(i) + yOffset);
         }
         // Draw waveform
@@ -370,16 +380,36 @@ void SpikePlot::updateSpikePlot(double rms)
     {
         painter.setPen(Qt::red);
         painter.drawLine(xOffset, yScaleFactor * voltageThreshold + yOffset,
-                          xScaleFactor * (totalTSteps - 1) +  xOffset, yScaleFactor * voltageThreshold + yOffset);
+                         xScaleFactor * (totalTSteps - 1) +  xOffset, yScaleFactor * voltageThreshold + yOffset);
     }
     // If using the voltage time discrimintator plot two cursors to allow the user to
     // adjust the votlage bands and time separation between them
-    else if(this->voltageTimeDiscriminatorMode)
+    else if(voltageTimeDiscriminatorMode)
     {
         painter.setPen(Qt::red);
+        // draw cursor 1
+        // upper horizontal line
+        painter.drawLine(xOffset+xScaleFactor*xCursor1Pos-12, yScaleFactor*(V1BandLimit+V1ThreshPoint)+yOffset,
+                         xOffset+xScaleFactor*xCursor1Pos+12, yScaleFactor*(V1BandLimit+V1ThreshPoint)+yOffset);
+        //vertical line
+        painter.drawLine(xOffset+xScaleFactor*xCursor1Pos, yScaleFactor*(V1ThreshPoint+V1BandLimit)+yOffset,
+                         xOffset+xScaleFactor*xCursor1Pos, yScaleFactor*(V1ThreshPoint-V1BandLimit)+yOffset);
+        // lower horizontal line
+        painter.drawLine(xOffset+xScaleFactor*xCursor1Pos-12, yScaleFactor*(V1ThreshPoint-V1BandLimit)+yOffset,
+                         xOffset+xScaleFactor*xCursor1Pos+12, yScaleFactor*(V1ThreshPoint-V1BandLimit)+yOffset);
 
+        painter.setPen(Qt::green);
+        // draw cursor 2
+        // upper horizontal line
+        painter.drawLine(xOffset+xScaleFactor*xCursor2Pos-12, yScaleFactor*(V2BandLimit+V2ThreshPoint)+yOffset,
+                         xOffset+xScaleFactor*xCursor2Pos+12, yScaleFactor*(V2BandLimit+V2ThreshPoint)+yOffset);
+        //vertical line
+        painter.drawLine(xOffset+xScaleFactor*xCursor2Pos, yScaleFactor*(V2ThreshPoint+V2BandLimit)+yOffset,
+                         xOffset+xScaleFactor*xCursor2Pos, yScaleFactor*(V2ThreshPoint-V2BandLimit)+yOffset);
+        // lower horizontal line
+        painter.drawLine(xOffset+xScaleFactor*xCursor2Pos-12, yScaleFactor*(V2ThreshPoint-V2BandLimit)+yOffset,
+                         xOffset+xScaleFactor*xCursor2Pos+12, yScaleFactor*(V2ThreshPoint-V2BandLimit)+yOffset);
     }
-
     painter.setClipping(false);
 
     // Don't update the RMS value display every time, or it will change so fast that it
@@ -415,7 +445,7 @@ void SpikePlot::resetVoltageTimeDiscriminatorCursors()
 // the spike plot when not running.
 void SpikePlot::resetVoltageThresholdLine()
 {
-    this->updateSpikePlot(0.0);
+    this->updateSpikePlot(0.0);    
 }
 
 // If user clicks inside display,
@@ -437,16 +467,28 @@ void SpikePlot::mousePressEvent(QMouseEvent *event)
     else if (event->button() == Qt::LeftButton &&
              this->voltageTimeDiscriminatorMode)
     {
-
+        if (frame.contains(event->pos()))
+        {
+            int tAxisLength = frame.width() - 1;
+            int xMouse = event->pos().x()-frame.left();
+            xCursor1Pos = (xMouse*totalTSteps) /tAxisLength; // sample number
+            int yMouse = event->pos().y();
+            V1ThreshPoint= yScale * (frame.center().y() - yMouse) / (frame.height() / 2); // uVolts
+            updateSpikePlot(0.0);
+        }
     }
     else if (event->button() == Qt::RightButton &&
              this->voltageTimeDiscriminatorMode)
     {
-
-    }
-    else
-    {
-
+        if (frame.contains(event->pos()))
+        {
+            int tAxisLength = frame.width() - 1;
+            int xMouse = event->pos().x()-frame.left();
+            xCursor2Pos = (xMouse*totalTSteps) /tAxisLength;
+            int yMouse = event->pos().y();
+            V2ThreshPoint= yScale * (frame.center().y() - yMouse) / (frame.height() / 2);
+            updateSpikePlot(0.0);
+        }
     }
 }
 
@@ -530,18 +572,21 @@ void SpikePlot::setVoltageTriggerMode(bool voltageMode)
     updateSpikePlot(0.0);
 }
 
+
 // set the voltage band for the first band of
 // the voltage time discrimnator
-void SpikePlot::setV1Band(int threshold)
+void SpikePlot::setV1Band(int bandLim)
 {
-    V1BandLimit = threshold;
+    V1BandLimit = bandLim;
+    updateSpikePlot(0.0);
 }
 
 // set the voltage band for the second band
 // of the voltage time discriminator
-void SpikePlot::setV2Band(int threshold)
+void SpikePlot::setV2Band(int bandLim)
 {
-    V2BandLimit = threshold;
+    V2BandLimit = bandLim;
+    updateSpikePlot(0.0);
 }
 
 // Set voltage threshold trigger level.  We use integer threshold
@@ -606,4 +651,12 @@ void SpikePlot::initializeDisplay() {
     // Initialize display.
     drawAxisText();
     drawAxisLines();
+    if(!spikeScopeDialog->getMainWindowObj()->isRunning() && voltageTimeDiscriminatorMode)
+    {
+        resetVoltageTimeDiscriminatorCursors();
+    }
+    else if(!spikeScopeDialog->getMainWindowObj()->isRunning() && voltageTriggerMode)
+    {
+        resetVoltageThresholdLine();
+    }
 }

@@ -47,6 +47,7 @@ public:
     void setNewChannel(SignalChannel* newChannel);
     void expandYScale();
     void contractYScale();
+    MainWindow* getMainWindowObj();
 
 signals:
     
