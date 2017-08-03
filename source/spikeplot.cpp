@@ -260,23 +260,62 @@ void SpikePlot::updateWaveform(int numBlocks)
 
     // Find trigger events, and then copy waveform snippets to spikeWaveform vector.
     index = startingNewChannel ? (preTriggerTSteps + totalTSteps) : preTriggerTSteps;
-    while (index <= SAMPLES_PER_DATA_BLOCK * numBlocks + totalTSteps - 1 - (totalTSteps - preTriggerTSteps)) {
+    uint32_t lastSample = SAMPLES_PER_DATA_BLOCK * numBlocks + totalTSteps - 1 - (totalTSteps - preTriggerTSteps);
+    while (index <= lastSample)
+    {
         triggered = false;
-        if (voltageTriggerMode) {
+        if (voltageTriggerMode)
+        {
             if (voltageThreshold >= 0) {
                 // Positive voltage threshold trigger
-                if (spikeWaveformBuffer.at(index - 1) < voltageThreshold &&
-                        spikeWaveformBuffer.at(index) >= voltageThreshold) {
+                if (spikeWaveformBuffer.at(index - 1) <  (double)voltageThreshold &&
+                        spikeWaveformBuffer.at(index) >= (double)voltageThreshold) {
                     triggered = true;
                 }
             } else {
                 // Negative voltage threshold trigger
-                if (spikeWaveformBuffer.at(index - 1) > voltageThreshold &&
-                        spikeWaveformBuffer.at(index) <= voltageThreshold) {
+                if (spikeWaveformBuffer.at(index - 1) >  (double)voltageThreshold &&
+                        spikeWaveformBuffer.at(index) <= (double)voltageThreshold) {
                     triggered = true;
                 }
             }
-        } else {
+        }
+        else if (voltageTimeDiscriminatorMode)
+        {
+            // absolute value.
+            uint32_t spike_sample_dist = xCursor1Pos > xCursor2Pos ? xCursor1Pos - xCursor2Pos :
+                                                                     xCursor2Pos - xCursor1Pos;
+            if (xCursor1Pos < xCursor2Pos)
+            {
+                if (index + spike_sample_dist < lastSample)
+                {
+                    if(
+                       qFabs(qFabs(spikeWaveformBuffer.at(index-1))-qFabs((double)V1ThreshPoint)) < V1BandLimit &&
+                       qFabs(qFabs(spikeWaveformBuffer.at(index-1+spike_sample_dist))-qFabs((double)V2ThreshPoint)) < V2BandLimit
+                      )
+                    {
+                        triggered = true;
+                    }
+                }
+            }
+            else
+            {
+                if (index + spike_sample_dist < lastSample)
+                {
+                    if(
+                       qFabs(qFabs(spikeWaveformBuffer.at(index-1))-qFabs((double)V2ThreshPoint)) < V2BandLimit &&
+                       qFabs(qFabs(spikeWaveformBuffer.at(index-1+spike_sample_dist))-qFabs((double)V1ThreshPoint)) < V1BandLimit
+                      )
+                    {
+                        triggered = true;
+                    }
+                }
+            }
+
+
+        }
+        else
+        {
             if (digitalEdgePolarity) {
                 // Digital rising edge trigger
                 if (digitalInputBuffer.at(index - 1) == 0 &&
@@ -635,7 +674,8 @@ void SpikePlot::setNewChannel(SignalChannel* newChannel)
     initializeDisplay();
 }
 
-void SpikePlot::resizeEvent(QResizeEvent*) {
+void SpikePlot::resizeEvent(QResizeEvent*)
+{
     // Pixel map used for double buffering.
     pixmap = QPixmap(size());
     pixmap.fill();
