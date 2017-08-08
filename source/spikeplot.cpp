@@ -290,8 +290,14 @@ void SpikePlot::updateWaveform(int numBlocks)
                 if (index + spike_sample_dist < lastSample)
                 {
                     if(
-                       qFabs(qFabs(spikeWaveformBuffer.at(index-1))-qFabs((double)V1ThreshPoint)) < V1BandLimit &&
-                       qFabs(qFabs(spikeWaveformBuffer.at(index-1+spike_sample_dist))-qFabs((double)V2ThreshPoint)) < V2BandLimit
+                        (
+                           spikeWaveformBuffer.at(index) < ((double)V1ThreshPoint + (double)V1BandLimit) &&
+                           spikeWaveformBuffer.at(index) > ((double)V1ThreshPoint - (double)V1BandLimit)
+                        ) &&
+                        (
+                           spikeWaveformBuffer.at(index+spike_sample_dist) < ((double)V2ThreshPoint + (double)V2BandLimit) &&
+                           spikeWaveformBuffer.at(index+spike_sample_dist) > ((double)V2ThreshPoint - (double)V2BandLimit)
+                        )
                       )
                     {
                         triggered = true;
@@ -303,8 +309,15 @@ void SpikePlot::updateWaveform(int numBlocks)
                 if (index + spike_sample_dist < lastSample)
                 {
                     if(
-                       qFabs(qFabs(spikeWaveformBuffer.at(index-1))-qFabs((double)V2ThreshPoint)) < V2BandLimit &&
-                       qFabs(qFabs(spikeWaveformBuffer.at(index-1+spike_sample_dist))-qFabs((double)V1ThreshPoint)) < V1BandLimit
+                        (
+                            spikeWaveformBuffer.at(index) < ((double)V2ThreshPoint + (double)V2BandLimit) &&
+                            spikeWaveformBuffer.at(index) > ((double)V2ThreshPoint - (double)V2BandLimit)
+
+                        ) &&
+                        (
+                            spikeWaveformBuffer.at(index+spike_sample_dist) < ((double)V1ThreshPoint + (double)V1BandLimit) &&
+                            spikeWaveformBuffer.at(index+spike_sample_dist) > ((double)V1ThreshPoint - (double)V1BandLimit)
+                        )
                       )
                     {
                         triggered = true;
